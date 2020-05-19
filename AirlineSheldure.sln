@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30011.22
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AirlineSheldure", "AirlineSheldure\AirlineSheldure.csproj", "{B71B0204-ACC2-4A5E-AD77-A1E60A557FCA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Model", "Model\Model.csproj", "{A798254E-7E74-4D5B-B7F5-368F9198CBE8}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B71B0204-ACC2-4A5E-AD77-A1E60A557FCA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B71B0204-ACC2-4A5E-AD77-A1E60A557FCA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B71B0204-ACC2-4A5E-AD77-A1E60A557FCA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B71B0204-ACC2-4A5E-AD77-A1E60A557FCA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A798254E-7E74-4D5B-B7F5-368F9198CBE8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A798254E-7E74-4D5B-B7F5-368F9198CBE8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A798254E-7E74-4D5B-B7F5-368F9198CBE8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A798254E-7E74-4D5B-B7F5-368F9198CBE8}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {15725724-5055-4693-AD37-B1FA492E36DF}
+	EndGlobalSection
+EndGlobal
