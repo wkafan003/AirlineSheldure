@@ -27,9 +27,55 @@ namespace AirlineSheldure
 		public MainWindow()
 		{
 			InitializeComponent();
+			for (int i = 0; i < 15; i++)
+			{
+				var b = MakeBorder($"{i}", 35, 40, 100*i, 100, Color.FromArgb(10 * 255 / 100, 197, 39, 39));
+				MainCanvas.Children.Add(b);
+			}
+
+			MainCanvas.Width = 14 * 100 + 35;
+
 			db = new ApplicationContext();
+			db.Airplanes.Load();
+			db.Flights.Load();
+			db.Airports.Load();
+			db.Crewmembers.Include(i => i.Permissions).Include(c => c.Roster).ThenInclude(r => r.Actions).Load();
 
-
+			//AirlineRostering(db);
+			//db.SaveChanges();
+			//CrewRostering(db);
+			//db.SaveChanges();
+			//Datagrid1.DataContext = db.Flights.Local.ToObservableCollection();
+			Datagrid1.ItemsSource = db.Flights.Local.ToObservableCollection();
+			db.Flights.First().StartTime += TimeSpan.FromDays(1);
+			db.Flights.Add(new Flight() { FromId = -1, ToId = -2, StartTime = DateTime.MinValue, EndTime = DateTime.MinValue });
+			
+			Console.WriteLine();
+		}
+		public static Border MakeBorder(string text, int width, int height, double x, double y, Color background)
+		{
+			Border b = new Border()
+			{
+				Width = width,
+				Height = height,
+				Background = new SolidColorBrush(background),
+				BorderThickness = new Thickness(1),
+				BorderBrush = new SolidColorBrush(Colors.Black),
+			};
+			TextBlock tb = new TextBlock()
+			{
+				HorizontalAlignment = HorizontalAlignment.Center,
+				VerticalAlignment = VerticalAlignment.Center,
+				Text = text,
+			};
+			b.ToolTip = "Ожидание";
+			b.Child = tb;
+			b.SetValue(Canvas.LeftProperty, x);
+			b.SetValue(Canvas.TopProperty, y);
+			return b;
+		}
+		public static void AirlineRostering(ApplicationContext db)
+		{
 			TimeSpan minTurnTime = db.TurnTimes.Min(i => i.Time);
 
 			bool[,] PiAirline;
@@ -122,17 +168,18 @@ namespace AirlineSheldure
 				}
 			}
 
-			db.SaveChanges();
-
-			db.Airplanes.Load();
-			db.Flights.Load();
-			db.Airports.Load();
-			db.Crewmembers.Include(i => i.Permissions).Include(c => c.Roster).ThenInclude(r => r.Actions).Load();
+			//db.SaveChanges();
+		}
+		public static void CrewRostering(ApplicationContext db)
+		{
+			
+			Airport[] airports = db.Airports.OrderBy(i => i.Id).ToArray();
+			Airplane[] airplanes = db.Airplanes.OrderBy(i => i.Id).ToArray();
 			//fSort = db.Flights.OrderBy(f => f.StartTime).ToArray();
 			int dayBufCrew = 10;
 			var dailyCrew = (db.Flights.AsEnumerable() ?? throw new Exception("Список полетов пуст!."))
 				.GroupBy(i => i.StartTime.DayOfYear).ToArray();
-
+			Flight[] fSort;
 			for (int day = 0; day < dailyCrew.Length; day += dayBufCrew)
 			{
 				//f_sort = db.Flights.Where(f=>f.StartTime ==DateTime.Now).OrderBy(f => f.StartTime).ToArray();
@@ -218,7 +265,7 @@ namespace AirlineSheldure
 				//     }
 				// }
 
-				db.SaveChanges();
+				//db.SaveChanges();
 				foreach (Airplane airplane in airplanes)
 				{
 					var keks = db.CrewmemberPairs.Include(p => p.CrewmemberDuties)
@@ -303,8 +350,7 @@ namespace AirlineSheldure
 			}
 
 
-			db.SaveChanges();
-			Console.WriteLine();
+			//db.SaveChanges();
 		}
 		public static bool IsRosterValid(Crewmember crewmember, DateTime startTime, DateTime EndTime)
 		{
@@ -715,7 +761,6 @@ namespace AirlineSheldure
 			Console.WriteLine("Number of constraints = " + solver.NumConstraints());
 
 			Solver.ResultStatus resultStatus = solver.Solve();
-
 			// Check that the problem has an optimal solution.
 			if (resultStatus != Solver.ResultStatus.OPTIMAL)
 			{
@@ -848,6 +893,22 @@ namespace AirlineSheldure
 			Console.WriteLine("Problem solved in " + solver.Iterations() + " iterations");
 			Console.WriteLine("Problem solved in " + solver.Nodes() + " branch-and-bound nodes");
 			return x.Select(i => i.SolutionValue() == 1 ? true : false).ToArray();
+		}
+
+		private void ComboBoxFlight_Loaded(object sender, RoutedEventArgs e)
+		{
+			ComboBox combo = (ComboBox)sender;
+			combo.ItemsSource = db.Airports.Local.ToObservableCollection();
+		}
+
+		private void Button_Click(object sender, RoutedEventArgs e)
+		{
+			MessageBox.Show(" ");
+		}
+
+		private void Datagrid1_LoadingRow(object sender, DataGridRowEventArgs e)
+		{
+			e.Row.Header = (e.Row.GetIndex()).ToString();
 		}
 	}
 }

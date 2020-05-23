@@ -39,7 +39,7 @@ namespace Model
         {
             Flight[] flights;
             List<Flight> allFlights = new List<Flight>();
-            for (int day = 0; day < 30; day++)
+            for (int day = 0; day < 1; day++)
             {
                 flights = File.ReadAllLines("расписание.txt").Select(s => s.Split())
                     .Select(s => new Flight(0, int.Parse(s[0]), int.Parse(s[1]), int.Parse(s[2]),

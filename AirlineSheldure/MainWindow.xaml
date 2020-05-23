@@ -3,10 +3,51 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:AirlineSheldure"
+        xmlns:local="clr-namespace:AirlineSheldure" xmlns:local1="clr-namespace:Model;assembly=Model"
+        xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
-        
+
+        <Border Margin="149,217,10,10" BorderThickness="1" BorderBrush="Black">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+                <Canvas Margin="0" Width="1000"  x:Name="MainCanvas">
+                </Canvas>
+            </ScrollViewer>
+        </Border>
+        <DataGrid  x:Name="Datagrid1"  Margin="149,10,10,222" AutoGenerateColumns="False" CanUserAddRows="False" LoadingRow="Datagrid1_LoadingRow">
+            <DataGrid.Columns>
+                <DataGridTemplateColumn Header="Номер рейса">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBox Text="{Binding Num,Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Аэропорт отправления">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <ComboBox Loaded="ComboBoxFlight_Loaded" DisplayMemberPath="Name" SelectedValuePath="Id" SelectedValue="{Binding Path=From.Id,Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Время отправления">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <xctk:DateTimePicker Value="{Binding StartTime, Mode=TwoWay}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="Аэропорт прибытия" Binding="{Binding To.Name}"/>
+                <DataGridTemplateColumn Header="Время прибытия">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <xctk:DateTimePicker Value="{Binding EndTime}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+        <Button Content="Button" HorizontalAlignment="Left" Margin="55,71,0,0" VerticalAlignment="Top" Click="Button_Click"/>
     </Grid>
 </Window>
