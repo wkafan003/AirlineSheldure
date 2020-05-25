@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Microsoft.EntityFrameworkCore;
 
 namespace Model
@@ -37,9 +40,14 @@ namespace Model
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder
+                .Entity<Flight>()
+                .HasIndex(f => f.Num)
+                .IsUnique();
+
             Flight[] flights;
             List<Flight> allFlights = new List<Flight>();
-            for (int day = 0; day < 1; day++)
+            for (int day = 0; day < 10; day++)
             {
                 flights = File.ReadAllLines("расписание.txt").Select(s => s.Split())
                     .Select(s => new Flight(0, int.Parse(s[0]), int.Parse(s[1]), int.Parse(s[2]),
@@ -100,7 +108,7 @@ namespace Model
             Roster[] rosters = new Roster[crewmembers.Length];
             for (int i = 0; i < rosters.Length; i++)
             {
-                rosters[i] = new Roster() { Id = crewmembers[i].Id };
+                rosters[i] = new Roster() {Id = crewmembers[i].Id};
                 crewmembers[i].RosterId = rosters[i].Id;
             }
 
@@ -114,37 +122,36 @@ namespace Model
                 new Permission() {Id = -20, CrewmemberId = -7, AirplaneId = -2, FirstPilot = false, SecondPilot = true},
                 new Permission() {Id = -19, CrewmemberId = -7, AirplaneId = -1, FirstPilot = false, SecondPilot = true},
 
-                new Permission(){Id=-18,CrewmemberId = -6,AirplaneId = -3,FirstPilot = true,SecondPilot = true},
-                new Permission(){Id=-17,CrewmemberId = -6,AirplaneId = -2,FirstPilot = true,SecondPilot = true},
-                new Permission(){Id=-16,CrewmemberId = -6,AirplaneId = -1,FirstPilot = false,SecondPilot = true},
-                new Permission(){Id=-15,CrewmemberId = -5,AirplaneId = -3,FirstPilot = false,SecondPilot = true},
-                new Permission(){Id=-14,CrewmemberId = -5,AirplaneId = -2,FirstPilot = false,SecondPilot = true},
-                new Permission(){Id=-13,CrewmemberId = -5,AirplaneId = -1,FirstPilot = false,SecondPilot = true},
+                new Permission() {Id = -18, CrewmemberId = -6, AirplaneId = -3, FirstPilot = true, SecondPilot = true},
+                new Permission() {Id = -17, CrewmemberId = -6, AirplaneId = -2, FirstPilot = true, SecondPilot = true},
+                new Permission() {Id = -16, CrewmemberId = -6, AirplaneId = -1, FirstPilot = false, SecondPilot = true},
+                new Permission() {Id = -15, CrewmemberId = -5, AirplaneId = -3, FirstPilot = false, SecondPilot = true},
+                new Permission() {Id = -14, CrewmemberId = -5, AirplaneId = -2, FirstPilot = false, SecondPilot = true},
+                new Permission() {Id = -13, CrewmemberId = -5, AirplaneId = -1, FirstPilot = false, SecondPilot = true},
 
-                new Permission(){Id=-12,CrewmemberId = -4,AirplaneId = -3,FirstPilot = true,SecondPilot = true},
-                new Permission(){Id=-11,CrewmemberId = -4,AirplaneId = -2,FirstPilot = true,SecondPilot = true},
-                new Permission(){Id=-10,CrewmemberId = -4,AirplaneId = -1,FirstPilot = false,SecondPilot = true},
-                new Permission(){Id=-9,CrewmemberId = -3,AirplaneId = -3,FirstPilot = false,SecondPilot = true},
-                new Permission(){Id=-8,CrewmemberId = -3,AirplaneId = -2,FirstPilot = false,SecondPilot = true},
-                new Permission(){Id=-7,CrewmemberId = -3,AirplaneId = -1,FirstPilot = false,SecondPilot = true},
+                new Permission() {Id = -12, CrewmemberId = -4, AirplaneId = -3, FirstPilot = true, SecondPilot = true},
+                new Permission() {Id = -11, CrewmemberId = -4, AirplaneId = -2, FirstPilot = true, SecondPilot = true},
+                new Permission() {Id = -10, CrewmemberId = -4, AirplaneId = -1, FirstPilot = false, SecondPilot = true},
+                new Permission() {Id = -9, CrewmemberId = -3, AirplaneId = -3, FirstPilot = false, SecondPilot = true},
+                new Permission() {Id = -8, CrewmemberId = -3, AirplaneId = -2, FirstPilot = false, SecondPilot = true},
+                new Permission() {Id = -7, CrewmemberId = -3, AirplaneId = -1, FirstPilot = false, SecondPilot = true},
 
-                new Permission(){Id=-6,CrewmemberId = -2,AirplaneId = -3,FirstPilot = true,SecondPilot = true},
-                new Permission(){Id=-5,CrewmemberId = -2,AirplaneId = -2,FirstPilot = true,SecondPilot = true},
-                new Permission(){Id=-4,CrewmemberId = -2,AirplaneId = -1,FirstPilot = false,SecondPilot = true},
-                new Permission(){Id=-3,CrewmemberId = -1,AirplaneId = -3,FirstPilot = false,SecondPilot = true},
-                new Permission(){Id=-2,CrewmemberId = -1,AirplaneId = -2,FirstPilot = false,SecondPilot = true},
-                new Permission(){Id=-1,CrewmemberId = -1,AirplaneId = -1,FirstPilot = false,SecondPilot = true},
+                new Permission() {Id = -6, CrewmemberId = -2, AirplaneId = -3, FirstPilot = true, SecondPilot = true},
+                new Permission() {Id = -5, CrewmemberId = -2, AirplaneId = -2, FirstPilot = true, SecondPilot = true},
+                new Permission() {Id = -4, CrewmemberId = -2, AirplaneId = -1, FirstPilot = false, SecondPilot = true},
+                new Permission() {Id = -3, CrewmemberId = -1, AirplaneId = -3, FirstPilot = false, SecondPilot = true},
+                new Permission() {Id = -2, CrewmemberId = -1, AirplaneId = -2, FirstPilot = false, SecondPilot = true},
+                new Permission() {Id = -1, CrewmemberId = -1, AirplaneId = -1, FirstPilot = false, SecondPilot = true},
             });
             modelBuilder.Entity<ActionType>().HasData(new ActionType[]
             {
-                new ActionType(){Id =-7,Type = "Другая причина отсутствия"},
-                new ActionType(){Id =-6,Type = "Отпуск"},
-                new ActionType(){Id =-5,Type = "Ожидание в гостинице"},
-                new ActionType(){Id =-4,Type = "Ожидание нового рейса"},
-                new ActionType(){Id =-3,Type = "Занятие на тренажере"},
-                new ActionType(){Id =-2,Type = "Полет первым пилотом"},
-                new ActionType(){Id =-1,Type = "Полет вторым пилотом"},
-
+                new ActionType() {Id = -7, Type = "Другая причина отсутствия"},
+                new ActionType() {Id = -6, Type = "Отпуск"},
+                new ActionType() {Id = -5, Type = "Ожидание в гостинице"},
+                new ActionType() {Id = -4, Type = "Ожидание нового рейса"},
+                new ActionType() {Id = -3, Type = "Занятие на тренажере"},
+                new ActionType() {Id = -2, Type = "Полет первым пилотом"},
+                new ActionType() {Id = -1, Type = "Полет вторым пилотом"},
             });
         }
     }
@@ -152,11 +159,44 @@ namespace Model
     /// <summary>
     /// Класс аэропорта
     /// </summary>
-    public class Airport
+    public class Airport : INotifyPropertyChanged
     {
-        public int Id { get; set; }
-        public string Name { get; set; }
-        public string Fullname { get; set; }
+        private int _id;
+        private string _name;
+        private string _fullname;
+
+        public int Id
+        {
+            get => _id;
+            set
+            {
+                if (_id == value) return;
+                _id = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public string Name
+        {
+            get => _name;
+            set
+            {
+                if (_name==value) return;
+                _name = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public string Fullname
+        {
+            get => _fullname;
+            set
+            {
+                if(_fullname==value) return;
+                _fullname = value;
+                OnPropertyChanged();
+            }
+        }
 
         public Airport()
         {
@@ -168,27 +208,164 @@ namespace Model
             Name = name;
             Fullname = fullname;
         }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        public void OnPropertyChanged([CallerMemberName] string prop = "")
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
+        }
     }
 
     /// <summary>
     /// Класс полета
     /// </summary>
-    public class Flight
+    public class Flight : INotifyPropertyChanged
     {
-        public int Id { get; set; }
-        public int Num { get; set; }
+        private int _id;
+        private int _num;
+        private int _fromId;
+        private Airport _from;
+        private int _toId;
+        private Airport _to;
+        private DateTime _startTime;
+        private DateTime _endTime;
+        private double _demand;
+        private double _price;
+        private int? _airplaneId;
+        private Airplane _airplane;
 
-        public int FromId { get; set; }
-        public Airport From { get; set; }
+        public int Id
+        {
+            get => _id;
+            set
+            {
+                if(_id==value) return;
+                _id = value;
+                OnPropertyChanged();
+            }
+        }
 
-        public int ToId { get; set; }
-        public Airport To { get; set; }
-        public DateTime StartTime { get; set; }
-        public DateTime EndTime { get; set; }
-        public double Demand { get; set; }
-        public double Price { get; set; }
-        public int? AirplaneId { get; set; }
-        public Airplane Airplane { get; set; }
+        public int Num
+        {
+            get => _num;
+            set
+            {
+                if(_num==value) return;
+                _num = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public int FromId
+        {
+            get => _fromId;
+            set
+            {
+                if(_fromId==value) return;
+                _fromId = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public virtual Airport From
+        {
+            get => _from;
+            set
+            {
+                if(_from==value) return;
+                _from = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public int ToId
+        {
+            get => _toId;
+            set
+            {
+                if(_toId==value) return;
+                _toId = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public virtual Airport To
+        {
+            get => _to;
+            set
+            {
+                if(_to==value) return;
+                _to = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public DateTime StartTime
+        {
+            get => _startTime;
+            set
+            {
+                if(_startTime==value) return;
+                _startTime = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public DateTime EndTime
+        {
+            get => _endTime;
+            set
+            {
+                if(_endTime==value) return;
+                _endTime = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public double Demand
+        {
+            get => _demand;
+            set
+            {
+                if(_demand==value) return;
+                _demand = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public double Price
+        {
+            get => _price;
+            set
+            {
+                if(_price==value) return;
+                _price = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public int? AirplaneId
+        {
+            get => _airplaneId;
+            set
+            {
+                if(_airplaneId==value) return;
+                _airplaneId = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public virtual Airplane Airplane
+        {
+            get => _airplane;
+            set
+            {
+                if(_airplane==value) return;
+                _airplane = value;
+                OnPropertyChanged();
+            }
+        }
+
         public Flight()
         {
         }
@@ -205,21 +382,60 @@ namespace Model
             this.Demand = demand;
             this.Price = price;
         }
+        public event PropertyChangedEventHandler PropertyChanged;
+        public void OnPropertyChanged([CallerMemberName] string prop = "")
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
+        }
     }
 
     /// <summary>
     /// Класс цепочки полетов (начинается и заканчивается в одном аэропорте)
     /// </summary>
-    public class AirplanePair
+    public class AirplanePair : INotifyPropertyChanged
     {
-        public int Id { get; set; }
-        public List<Flight> Flights { get; }
-        public int AirplaneId { get; set; }
-        public Airplane Airplane { get; set; }
+        private int _id;
+        private int _airplaneId;
+        private Airplane _airplane;
+
+        public int Id
+        {
+            get => _id;
+            set
+            {
+                if(_id==value) return;
+                _id = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public virtual IList<Flight> Flights { get; }
+
+        public int AirplaneId
+        {
+            get => _airplaneId;
+            set
+            {
+                if(_airplaneId==value) return;
+                _airplaneId = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public virtual Airplane Airplane
+        {
+            get => _airplane;
+            set
+            {
+                if(_airplane==value) return;
+                _airplane = value;
+                OnPropertyChanged();
+            }
+        }
 
         public AirplanePair()
         {
-            Flights = new List<Flight>();
+            Flights = new ObservableCollection<Flight>();
         }
 
         public string ToStringPair()
@@ -237,45 +453,239 @@ namespace Model
 
             return buf;
         }
+        public event PropertyChangedEventHandler PropertyChanged;
+        public void OnPropertyChanged([CallerMemberName] string prop = "")
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
+        }
     }
 
     /// <summary>
     /// Класс воздушного судна
     /// </summary>
-    public class Airplane
+    public class Airplane: INotifyPropertyChanged
     {
-        public int Id { get; set; }
-        public string Name { get; set; }
-        public int Count { get; set; }
-        public double Cost { get; set; }
-        public int Capacity { get; set; }
+        private int _id;
+        private string _name;
+        private int _count;
+        private double _cost;
+        private int _capacity;
+
+        public int Id
+        {
+            get => _id;
+            set
+            {
+                if(_id==value) return;
+                _id = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public string Name
+        {
+            get => _name;
+            set
+            {
+                if(_name==value) return;
+                _name = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public int Count
+        {
+            get => _count;
+            set
+            {
+                if(_count==value) return;
+                _count = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public double Cost
+        {
+            get => _cost;
+            set
+            {
+                if(_cost==value) return;
+                _cost = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public int Capacity
+        {
+            get => _capacity;
+            set
+            {
+                if(_capacity==value) return;
+                _capacity = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        public void OnPropertyChanged([CallerMemberName] string prop = "")
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
+        }
     }
 
 
     /// <summary>
     /// Оборотное время (время обсуживания)
     /// </summary>
-    public class TurnTime
+    public class TurnTime :INotifyPropertyChanged
     {
-        public int Id { get; set; }
-        public int AirplaneId { get; set; }
-        public virtual Airplane Airplane { get; set; }
-        public int AirportId { get; set; }
-        public virtual Airport Airport { get; set; }
-        public TimeSpan Time { get; set; }
+        private int _id;
+        private int _airplaneId;
+        private Airplane _airplane;
+        private int _airportId;
+        private Airport _airport;
+        private TimeSpan _time;
+
+        public int Id
+        {
+            get => _id;
+            set
+            {
+                if(_id==value) return;
+                _id = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public int AirplaneId
+        {
+            get => _airplaneId;
+            set
+            {
+                if(_airplaneId==value) return;
+                _airplaneId = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public virtual Airplane Airplane
+        {
+            get => _airplane;
+            set
+            {
+                if(_airplane==value) return;
+                _airplane = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public int AirportId
+        {
+            get => _airportId;
+            set
+            {
+                if(_airportId==value) return;
+                _airportId = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public virtual Airport Airport
+        {
+            get => _airport;
+            set
+            {
+                if(_airport==value) return;
+                _airport = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public TimeSpan Time
+        {
+            get => _time;
+            set
+            {
+                if(_time==value) return;
+                _time = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        public void OnPropertyChanged([CallerMemberName] string prop = "")
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
+        }
     }
 
     /// <summary>
     /// Член экипажа
     /// </summary>
-    public class Crewmember
+    public class Crewmember: INotifyPropertyChanged
     {
-        public int Id { get; set; }
+        private int _id;
+        private int _baseId;
+        private Airport _base;
+        private string _firstName;
+        private string _lastName;
+        private int? _rosterId;
+        private Roster _roster;
 
-        public int BaseId { get; set; }
-        public Airport Base { get; set; }
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
+        public int Id
+        {
+            get => _id;
+            set
+            {
+                if(_id==value) return;
+                _id = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public int BaseId
+        {
+            get => _baseId;
+            set
+            {
+                if(_baseId==value) return;
+                _baseId = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public virtual Airport Base
+        {
+            get => _base;
+            set
+            {
+                if(_base==value) return;
+                _base = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public string FirstName
+        {
+            get => _firstName;
+            set
+            {
+                if(_firstName==value) return;
+                _firstName = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public string LastName
+        {
+            get => _lastName;
+            set
+            {
+                if(_lastName==value) return;
+                _lastName = value;
+                OnPropertyChanged();
+            }
+        }
 
         [NotMapped]
         public string Fullname
@@ -289,37 +699,188 @@ namespace Model
                     FirstName = args[0];
                     LastName = args[1];
                 }
+                OnPropertyChanged();
             }
         }
-        public int? RosterId { get; set; }
-        public Roster Roster { get; set; }
-        public List<Permission> Permissions { get; set; }
+
+        public int? RosterId
+        {
+            get => _rosterId;
+            set
+            {
+                if(_rosterId==value) return;
+                _rosterId = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public virtual Roster Roster
+        {
+            get => _roster;
+            set
+            {
+                if(_roster==value) return;
+                _roster = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public virtual IList<Permission> Permissions { get; set; }
+
         public Crewmember()
         {
-            Permissions = new List<Permission>();
+            Permissions = new ObservableCollection<Permission>();
+        }
+        public event PropertyChangedEventHandler PropertyChanged;
+        public void OnPropertyChanged([CallerMemberName] string prop = "")
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
         }
     }
 
     /// <summary>
     /// Класс связки для членов экипажа. Содержит набор дежурств
     /// </summary>
-    public class CrewmemberPair
+    public class CrewmemberPair : INotifyPropertyChanged
     {
-        public int Id { get; set; }
-        public List<CrewmemberDuty> CrewmemberDuties { get; }
-        public int? CrewmemberFirstId { get; set; }
-        public Crewmember CrewmemberFirst { get; set; }
-        public int? CrewmemberSecondId { get; set; }
-        public Crewmember CrewmemberSecond { get; set; }
-        public int? AirplaneId { get; set; }
-        public Airplane Airplane { get; set; }
-        public TimeSpan FlyTime { get; set; }
-        public TimeSpan ElapseTime { get; set; }
-        public DateTime StartTime { get; set; }
-        public DateTime EndTime { get; set; }
+        private int _id;
+        private int? _crewmemberFirstId;
+        private Crewmember _crewmemberFirst;
+        private int? _crewmemberSecondId;
+        private Crewmember _crewmemberSecond;
+        private int? _airplaneId;
+        private Airplane _airplane;
+        private TimeSpan _flyTime;
+        private TimeSpan _elapseTime;
+        private DateTime _startTime;
+        private DateTime _endTime;
+
+        public int Id
+        {
+            get => _id;
+            set
+            {
+                if(_id==value) return;
+                _id = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public virtual IList<CrewmemberDuty> CrewmemberDuties { get; }
+
+        public int? CrewmemberFirstId
+        {
+            get => _crewmemberFirstId;
+            set
+            {
+                if(_crewmemberFirstId==value) return;
+                _crewmemberFirstId = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public virtual Crewmember CrewmemberFirst
+        {
+            get => _crewmemberFirst;
+            set
+            {
+                if(_crewmemberFirst==value) return;
+                _crewmemberFirst = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public int? CrewmemberSecondId
+        {
+            get => _crewmemberSecondId;
+            set
+            {
+                if(_crewmemberSecondId==value) return;
+                _crewmemberSecondId = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public Crewmember CrewmemberSecond
+        {
+            get => _crewmemberSecond;
+            set
+            {
+                if(_crewmemberSecond==value) return;
+                _crewmemberSecond = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public int? AirplaneId
+        {
+            get => _airplaneId;
+            set
+            {
+                if(_airplaneId==value) return;
+                _airplaneId = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public virtual Airplane Airplane
+        {
+            get => _airplane;
+            set
+            {
+                if(_airplane==value) return;
+                _airplane = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public TimeSpan FlyTime
+        {
+            get => _flyTime;
+            set
+            {
+                if(_flyTime==value) return;
+                _flyTime = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public TimeSpan ElapseTime
+        {
+            get => _elapseTime;
+            set
+            {
+                if(_elapseTime==value) return;
+                _elapseTime = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public DateTime StartTime
+        {
+            get => _startTime;
+            set
+            {
+                if(_startTime==value) return;
+                _startTime = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public DateTime EndTime
+        {
+            get => _endTime;
+            set
+            {
+                if(_endTime==value) return;
+                _endTime = value;
+                OnPropertyChanged();
+            }
+        }
+
         public CrewmemberPair()
         {
-            CrewmemberDuties = new List<CrewmemberDuty>();
+            CrewmemberDuties = new ObservableCollection<CrewmemberDuty>();
         }
 
         public string ToStringPair()
@@ -337,20 +898,105 @@ namespace Model
 
             return buf;
         }
+        public event PropertyChangedEventHandler PropertyChanged;
+        public void OnPropertyChanged([CallerMemberName] string prop = "")
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
+        }
     }
-    public class CrewmemberDuty
+
+    public class CrewmemberDuty : INotifyPropertyChanged
     {
-        public int Id { get; set; }
-        public List<Flight> Flights { get; set; }
-        public int? AirplaneId { get; set; }
-        public Airplane Airplane { get; set; }
-        public TimeSpan FlyTime { get; set; }
-        public TimeSpan ElapseTime { get; set; }
-        public DateTime StartTime { get; set; }
-        public DateTime EndTime { get; set; }
+        private int _id;
+        private int? _airplaneId;
+        private Airplane _airplane;
+        private TimeSpan _flyTime;
+        private TimeSpan _elapseTime;
+        private DateTime _startTime;
+        private DateTime _endTime;
+
+        public int Id
+        {
+            get => _id;
+            set
+            {
+                if(_id==value) return;
+                _id = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public IList<Flight> Flights { get; set; }
+
+        public int? AirplaneId
+        {
+            get => _airplaneId;
+            set
+            {
+                if(_airplaneId==value) return;
+                _airplaneId = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public virtual Airplane Airplane
+        {
+            get => _airplane;
+            set
+            {
+                if(_airplane==value) return;
+                _airplane = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public TimeSpan FlyTime
+        {
+            get => _flyTime;
+            set
+            {
+                if(_flyTime==value) return;
+                _flyTime = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public TimeSpan ElapseTime
+        {
+            get => _elapseTime;
+            set
+            {
+                if(_elapseTime==value) return;
+                _elapseTime = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public DateTime StartTime
+        {
+            get => _startTime;
+            set
+            {
+                if(_startTime==value) return;
+                _startTime = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public DateTime EndTime
+        {
+            get => _endTime;
+            set
+            {
+                if(_endTime==value) return;
+                _endTime = value;
+                OnPropertyChanged();
+            }
+        }
+
         public CrewmemberDuty()
         {
-            Flights = new List<Flight>();
+            Flights = new ObservableCollection<Flight>();
         }
 
         public string ToStringDuty()
@@ -368,58 +1014,279 @@ namespace Model
 
             return buf;
         }
+        public event PropertyChangedEventHandler PropertyChanged;
+        public void OnPropertyChanged([CallerMemberName] string prop = "")
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
+        }
     }
+
     /// <summary>
     /// Разрешение на полет
     /// </summary>
-    public class Permission
+    public class Permission : INotifyPropertyChanged
     {
-        public int Id { get; set; }
-        public int AirplaneId { get; set; }
-        public Airplane Airplane { get; set; }
-        public bool FirstPilot { get; set; }
-        public bool SecondPilot { get; set; }
-        public int CrewmemberId { get; set; }
-        public Crewmember Crewmember { get; set; }
+        private int _id;
+        private int _airplaneId;
+        private Airplane _airplane;
+        private bool _firstPilot;
+        private bool _secondPilot;
+        private int _crewmemberId;
+
+        public int Id
+        {
+            get => _id;
+            set
+            {
+                if(_id==value) return;
+                _id = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public int AirplaneId
+        {
+            get => _airplaneId;
+            set
+            {
+                if(_airplaneId==value) return;
+                _airplaneId = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public virtual Airplane Airplane
+        {
+            get => _airplane;
+            set
+            {
+                if(_airplane==value) return;
+                _airplane = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public bool FirstPilot
+        {
+            get => _firstPilot;
+            set
+            {
+                if(_firstPilot==value) return;
+                _firstPilot = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public bool SecondPilot
+        {
+            get => _secondPilot;
+            set
+            {
+                if(_secondPilot==value) return;
+                _secondPilot = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public int CrewmemberId
+        {
+            get => _crewmemberId;
+            set
+            {
+                if(_crewmemberId==value) return;
+                _crewmemberId = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public virtual Crewmember Crewmember { get; set; }
+        public event PropertyChangedEventHandler PropertyChanged;
+        public void OnPropertyChanged([CallerMemberName] string prop = "")
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
+        }
     }
 
     /// <summary>
     /// Расписание каждого члена экипажа
     /// </summary>
-    public class Roster
+    public class Roster : INotifyPropertyChanged
     {
-        public int Id { get; set; }
+        private int _id;
+        private TimeSpan _flyTime;
+        private TimeSpan _elapseTime;
 
-        public List<Action> Actions { get; set; }
-        public TimeSpan FlyTime { get; set; }
-        public TimeSpan ElapseTime { get; set; }
+        public int Id
+        {
+            get => _id;
+            set
+            {
+                if(_id==value) return;
+                _id = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public IList<Action> Actions { get; set; }
+
+        public TimeSpan FlyTime
+        {
+            get => _flyTime;
+            set
+            {
+                if(_flyTime==value) return;
+                _flyTime = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public TimeSpan ElapseTime
+        {
+            get => _elapseTime;
+            set
+            {
+                if(_elapseTime==value) return;
+                _elapseTime = value;
+                OnPropertyChanged();
+            }
+        }
+
         public Roster()
         {
-            Actions = new List<Action>();
+            Actions = new ObservableCollection<Action>();
+        }
+        public event PropertyChangedEventHandler PropertyChanged;
+        public void OnPropertyChanged([CallerMemberName] string prop = "")
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
         }
     }
+
     /// <summary>
     /// Конкретное действие члена экипажа, с указанием типа, даты начала и даты окончания
     /// </summary>
-    public class Action
+    public class Action : INotifyPropertyChanged
     {
-        public int Id { get; set; }
-        public string Description { get; set; }
-        public int ActionTypeId { get; set; }
-        public ActionType ActionType { get; set; }
-        public DateTime StartTime { get; set; }
-        public DateTime EndTime { get; set; }
+        private int _id;
+        private string _description;
+        private int _actionTypeId;
+        private ActionType _actionType;
+        private DateTime _startTime;
+        private DateTime _endTime;
 
+        public int Id
+        {
+            get => _id;
+            set
+            {
+                if(_id==value) return;
+                _id = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public string Description
+        {
+            get => _description;
+            set
+            {
+                if(_description==value) return;
+                _description = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public int ActionTypeId
+        {
+            get => _actionTypeId;
+            set
+            {
+                if(_actionTypeId==value) return;
+                _actionTypeId = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public virtual ActionType ActionType
+        {
+            get => _actionType;
+            set
+            {
+                if(_actionType==value) return;
+                _actionType = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public DateTime StartTime
+        {
+            get => _startTime;
+            set
+            {
+                if(_startTime==value) return;
+                _startTime = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public DateTime EndTime
+        {
+            get => _endTime;
+            set
+            {
+                if(_endTime==value) return;
+                _endTime = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        public void OnPropertyChanged([CallerMemberName] string prop = "")
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
+        }
     }
 
     /// <summary>
     /// Тип действия (отпуск, полет, гостиница и т.д.)
     /// </summary>
-    public class ActionType
+    public class ActionType : INotifyPropertyChanged
     {
-        public int Id { get; set; }
-        public string Type { get; set; }
+        private int _id;
+        private string _type;
+
+        public int Id
+        {
+            get => _id;
+            set
+            {
+                if(_id==value) return;
+                _id = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public string Type
+        {
+            get => _type;
+            set
+            {
+                if(_type==value) return;
+                _type = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        public void OnPropertyChanged([CallerMemberName] string prop = "")
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
+        }
     }
+
+    /// <summary>
+    /// Перечисление всех возможных событий расписания.
+    /// </summary>
     public enum ActionEnum
     {
         Other = -7,
