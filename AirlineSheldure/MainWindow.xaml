@@ -5,10 +5,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:AirlineSheldure" xmlns:local1="clr-namespace:Model;assembly=Model"
         xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
-        
         xmlns:system="clr-namespace:System;assembly=System.Runtime"
         mc:Ignorable="d"
-        Title="MainWindow" Height="500" Width="1210" Loaded="MainWindow_OnLoaded">
+        Title="MainWindow" Height="500" Width="1200" Loaded="MainWindow_OnLoaded">
     <Window.Resources>
         <CollectionViewSource x:Key="FlightViewSource" Source="{x:Null}"
                               d:DesignSource="{d:DesignInstance {x:Type local1:Flight}, CreateList=True}" />
@@ -17,13 +16,13 @@
         <CollectionViewSource x:Key="AiroportViewSource" Source="{x:Null}"
                               d:DesignSource="{d:DesignInstance {x:Type local1:Airport}, CreateList=True}" />
         <local:IsSelectedConverter x:Key="MySelectedConverter" />
-        <local1:Flight x:Key="FlightAdd" />
+        <local1:Flight x:Key="FlightAdd" StartTime="{x:Static local:DateTimeHelper.Today}" EndTime="{x:Static local:DateTimeHelper.TodayPlusHour}"/>
     </Window.Resources>
     <xctk:BusyIndicator x:Name="MainBusy">
         <Grid>
             <TabControl Margin="10,10,10,10" TabStripPlacement="Left">
                 <TabItem Width="100" Header="TabItem">
-                    <Grid Background="#FFCD7F7F">
+                    <Grid>
                         <DataGrid x:Name="Datagrid1" DataContext="{StaticResource FlightViewSource}"
                               ItemsSource="{Binding}"
                               Margin="0,0,0,130" AutoGenerateColumns="False" CanUserAddRows="False"
@@ -133,7 +132,7 @@
 
                             </DataGrid.Columns>
                         </DataGrid>
-                        <ScrollViewer Margin="0,0,108,0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Height="59" VerticalAlignment="Bottom" >
+                        <ScrollViewer Margin="10,0,110,10" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Height="60" VerticalAlignment="Bottom" >
                             <StackPanel  DataContext="{StaticResource FlightAdd}" Orientation="Horizontal"  VerticalAlignment="Bottom">
                                 <StackPanel Orientation="Vertical" Margin="0,0,10,0">
                                     <TextBlock  Text="Номер рейса"/>
@@ -203,12 +202,13 @@
                         </ScrollViewer>
 
                         <Button x:Name="ButtonFlightDelete" Content="Удалить" HorizontalAlignment="Left"
-                            Margin="842,0,0,86"
+                            Margin="988,0,0,40"
                             Height="20" VerticalAlignment="Bottom"
                             IsEnabled="{Binding ElementName=Datagrid1,Path=SelectedItem,
                             Converter={StaticResource MySelectedConverter}}"
                             Click="ButtonFlightDelete_Click" />
-                        <Button IsEnabled="{Binding Source={StaticResource FlightAdd},Path=IsValid}" x:Name="ButtonFlightAdd" Content="Добавить рейс" Margin="0,0,10,3" VerticalAlignment="Bottom" Click="ButtonFlightAdd_Click" HorizontalAlignment="Right" Width="93"/>
+                        <Button IsEnabled="{Binding Source={StaticResource FlightAdd},Path=IsValid}" x:Name="ButtonFlightAdd" Content="Добавить рейс" Margin="0,0,10,13" VerticalAlignment="Bottom" Click="ButtonFlightAdd_Click" HorizontalAlignment="Right" Width="93"/>
+                        <Button x:Name="ButtonFlightLoad" Content="Загрузить из файла" Margin="0,0,938,75" VerticalAlignment="Bottom" Click="ButtonFlightLoad_Click" HorizontalAlignment="Right" Width="124"/>
 
                     </Grid>
                 </TabItem>

@@ -45,6 +45,14 @@ namespace Model
                 .Entity<Flight>()
                 .HasIndex(f => f.Num)
                 .IsUnique();
+            modelBuilder
+                .Entity<Airport>()
+                .HasIndex(a=>a.Name)
+                .IsUnique();
+            modelBuilder
+                .Entity<Airplane>()
+                .HasIndex(a=>a.Name)
+                .IsUnique();
             Flight[] flights;
             List<Flight> allFlights = new List<Flight>();
             for (int day = 0; day < 10; day++)
@@ -222,6 +230,7 @@ namespace Model
     /// </summary>
     public class Flight : INotifyPropertyChanged, IDataErrorInfo
     {
+        private readonly FlightValidator _validator;
         private int _id;
         private int _num;
         private int? _fromId;
@@ -369,12 +378,13 @@ namespace Model
 
         public Flight()
         {
-            Errors = new Dictionary<string, string>();
+            _validator = new FlightValidator();
         }
 
         public Flight(int id, int num, int fromId, int toId, DateTime startTime, DateTime endTime, double demand,
             double price)
         {
+            _validator = new FlightValidator();
             this.Id = id;
             this.Num = num;
             this.FromId = fromId;
@@ -383,7 +393,6 @@ namespace Model
             this.EndTime = endTime;
             this.Demand = demand;
             this.Price = price;
-            Errors = new Dictionary<string, string>();
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -392,88 +401,37 @@ namespace Model
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
         }
-
         public string this[string columnName]
         {
             get
             {
-                string error = String.Empty;
-                bool isValidChange = false;
-                switch (columnName)
-                {
-                    case "StartTime":
-                        if (StartTime - EndTime>TimeSpan.Zero)
-                        {
-                            error = "Дата отправления должна быть меньше даты прибытия!";
-                            Errors["StartTime"] = error;
-                        }
-						else
-						{
-                            Errors["StartTime"] = null;
-                        }
-                        isValidChange = true;
-                        break;
-                    case "EndTime":
-                        if (StartTime >= EndTime)
-                        {
-                            error = "Дата прибытия должна быть больше даты отправления!";
-                            Errors["EndTime"] = error;
-                        }
-                        else
-                        {
-                            Errors["EndTime"] = null;
-                        }
-                        isValidChange = true;
-                        break;
-                    case "FromId":
-                        if (FromId == null)
-                        {
-                            error = "Укажите аэропорт отправления!";
-                            Errors["FromId"] = error;
-                        }
-                        else if (FromId == ToId)
-                        {
-                            error = "Аэропорты отправления и прибытия должны различаться!";
-                            Errors["FromId"] = error;
-                        }
-                        else
-                        {
-                            Errors["FromId"] = null;
-                        }
-                        isValidChange = true;
-                        break;
-                    case "ToId":
-                        if (ToId == null)
-                        {
-                            error = "Укажите аэропорт прибытия!";
-                            Errors["ToId"] = error;
-                        }
-                        else if (FromId == ToId)
-                        {
-                            error = "Аэропорты отправления и прибытия должны различаться!";
-                            Errors["ToId"] = error;
-                        }
-                        else
-                        {
-                            Errors["ToId"] = null;
-                        }
-                        isValidChange = true;
-                        break;
-                }
-                if(isValidChange) OnPropertyChanged("IsValid");
-                return error;
+                var firstOrDefault = _validator.Validate(this).Errors.FirstOrDefault(lol => lol.PropertyName == columnName);
+                OnPropertyChanged("IsValid");
+                if (firstOrDefault != null)
+                    return _validator != null ? firstOrDefault.ErrorMessage : "";
+                return "";
             }
         }
         [NotMapped]
         public string Error
         {
-			get { throw new NotImplementedException(); }
+            get
+            {
+                if (_validator != null)
+                {
+                    var results = _validator.Validate(this);
+                    if (results != null && results.Errors.Any())
+                    {
+                        var errors = string.Join(Environment.NewLine, results.Errors.Select(x => x.ErrorMessage).ToArray());
+                        return errors;
+                    }
+                }
+                return string.Empty;
+            }
         }
-        [NotMapped]
-        public Dictionary<string, string> Errors;
-        [NotMapped]
-        public bool IsValid => !Errors.Values.Any(x => !string.IsNullOrEmpty(x));
 
+        [NotMapped]
+        public bool IsValid => _validator.Validate(this).Errors.Count == 0;
     }
 
     /// <summary>

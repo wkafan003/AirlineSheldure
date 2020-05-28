@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -19,6 +20,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Google.OrTools.LinearSolver;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Win32;
 using Model;
 using Xceed;
 
@@ -41,11 +43,10 @@ namespace AirlineSheldure
             }
 
             MainCanvas.Width = 14 * 100 + 35;
-            
 
-            
+
             _db = new ApplicationContext();
-            foreach (var flight in _db.Flights.AsEnumerable().Where(f=>f.EndTime.TimeOfDay==TimeSpan.Zero))
+            foreach (var flight in _db.Flights.AsEnumerable().Where(f => f.EndTime.TimeOfDay == TimeSpan.Zero))
             {
                 flight.EndTime += TimeSpan.FromDays(1);
             }
@@ -57,13 +58,12 @@ namespace AirlineSheldure
             //_db.Flights.RemoveRange(_db.Flights);
             //_db.SaveChanges();
 
-            // AirlineRostering();
-            // _db.SaveChanges();
-            // CrewRostering();
-            // _db.SaveChanges();
-            
+            AirlineRostering();
+            _db.SaveChanges();
+            CrewRostering();
+            _db.SaveChanges();
+
             Console.WriteLine();
-            
         }
 
         public static Border MakeBorder(string text, int width, int height, double x, double y, Color background)
@@ -948,12 +948,17 @@ namespace AirlineSheldure
                 ((CollectionViewSource) (this.FindResource("AirplaneViewSource")));
             CollectionViewSource airoportViewSource =
                 ((CollectionViewSource) (this.FindResource("AiroportViewSource")));
+            Flight add = (Flight) FindResource("FlightAdd");
             // Load is an extension method on IQueryable,
             // defined in the System.Data.Entity namespace.
             // This method enumerates the results of the query,
             // similar to ToList but without creating a list.
             // When used with Linq to Entities this method
             // creates entity objects and adds them to the context.
+            //add.EndTime = DateTime.Now.Date + TimeSpan.FromHours(1);
+            //add.StartTime = DateTime.Now.Date;
+
+
             _db.Airplanes.Load();
             _db.Flights.Load();
             _db.Airports.Load();
@@ -970,11 +975,28 @@ namespace AirlineSheldure
 
         private void ButtonFlightDelete_Click(object sender, RoutedEventArgs e)
         {
-            _db.Flights.RemoveRange(Datagrid1.SelectedItems.Cast<Flight>().ToArray());
+            int count = Datagrid1.SelectedItems.Count;
+            if (MessageBox.Show(this, $"Удалить {count} рейсов. Вы уверены?", "Удаление рейсов",
+                MessageBoxButton.OKCancel) == MessageBoxResult.Yes)
+            {
+                try
+                {
+                    _db.Flights.RemoveRange(Datagrid1.SelectedItems.Cast<Flight>().ToArray());
+                    _db.SaveChanges();
+                }
+                catch (DbUpdateException ee)
+                {
+                    MessageBox.Show("Ошибка удаления рейсов!", "Непредвиденная ошибка");
+                }
+                catch (Exception ee)
+                {
+                    MessageBox.Show(ee.Message);
+                }
+            }
         }
 
-		private void Button_Click_1(object sender, RoutedEventArgs e)
-		{
+        private void Button_Click_1(object sender, RoutedEventArgs e)
+        {
             BackgroundWorker worker = new BackgroundWorker();
             worker.WorkerSupportsCancellation = true;
             worker.DoWork += (o, ea) =>
@@ -990,22 +1012,19 @@ namespace AirlineSheldure
                 worker.CancelAsync();
                 Thread.Sleep(1000 * 5);
             };
-            worker.RunWorkerCompleted += (o, ea) =>
-            {
-                MainBusy.IsBusy = false;
-            };
+            worker.RunWorkerCompleted += (o, ea) => { MainBusy.IsBusy = false; };
             MainBusy.IsBusy = true;
-            
+
             worker.RunWorkerAsync();
         }
 
-		private void ButtonFlightAdd_Click(object sender, RoutedEventArgs e)
-		{
-            Flight add,newFlight = null;
-			try
-			{
-                add = (Flight)FindResource("FlightAdd");
-                
+        private void ButtonFlightAdd_Click(object sender, RoutedEventArgs e)
+        {
+            Flight add, newFlight = null;
+            try
+            {
+                add = (Flight) FindResource("FlightAdd");
+
                 newFlight = new Flight()
                 {
                     FromId = add.FromId,
@@ -1015,16 +1034,85 @@ namespace AirlineSheldure
                     Demand = add.Demand,
                     Price = add.Price
                 };
+
                 _db.Flights.Add(newFlight);
                 _db.SaveChanges();
             }
-            catch(Exception ee)
-			{
-                MessageBox.Show(ee.Message);
-                if(newFlight!=null)
+
+            catch (DbUpdateException ee)
+            {
+                MessageBox.Show("Ошибка добавления рейса! Проверьте, является ли значение номера рейса уникальным.",
+                    "Ошибка добавления рейса");
+                if (newFlight != null)
                     _db.Flights.Remove(newFlight);
             }
-			Console.WriteLine("");
-		}
-	}
+            catch (Exception ee)
+            {
+                MessageBox.Show(ee.Message);
+            }
+
+            Console.WriteLine("");
+        }
+
+        private void ButtonFlightLoad_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog op = new OpenFileDialog()
+            {
+                Filter = "Текстовые файлы (*.txt)|*.txt|Все файлы (*.*)|*.*",
+            };
+            try
+            {
+                if (op.ShowDialog() == true)
+                {
+                    List<Flight> flights = new List<Flight>();
+                    string[][] source = File.ReadAllLines(op.FileName).Where(s => !s.StartsWith("#"))
+                        .Select(s => s.Split()).ToArray();
+                    foreach (var s in source)
+                    {
+                        int num = int.Parse(s[0]);
+                        var from = _db.Airports.FirstOrDefault(a =>
+                            a.Name == s[1]);
+                        if (from == null)
+                            throw new ArgumentException($"Аэропорта {s[1]} не существует!");
+                        int fromId = from.Id;
+
+                        DateTime startTime = DateTime.Parse(s[2] + " " + s[3]);
+
+                        var to = _db.Airports.FirstOrDefault(a =>
+                            a.Name == s[4]);
+                        if (to == null)
+                            throw new ArgumentException($"Аэропорта {s[4]} не существует!");
+                        int toId = to.Id;
+
+                        DateTime endTime = DateTime.Parse(s[5] + " " + s[6]);
+
+                        double demand = Double.Parse(s[7]);
+                        double price = Double.Parse(s[8]);
+                        flights.Add(new Flight()
+                        {
+                            Num = num,
+                            FromId = fromId,
+                            StartTime = startTime,
+                            ToId = toId,
+                            EndTime = endTime,
+                            Demand = demand,
+                            Price = price
+                        });
+                    }
+
+                    _db.Flights.RemoveRange(_db.Flights);
+                    _db.Flights.AddRange(flights);
+                    _db.SaveChanges();
+                }
+            }
+            catch (DbUpdateException ee)
+            {
+                MessageBox.Show("Ошибка записи в базу данных! ","Ошибка");
+            }
+            catch (Exception ee)
+            {
+                MessageBox.Show("Ошибка чтения файла! " + ee.Message,"Ошибка");
+            }
+        }
+    }
 }
