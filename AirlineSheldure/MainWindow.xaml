@@ -5,9 +5,10 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:AirlineSheldure" xmlns:local1="clr-namespace:Model;assembly=Model"
         xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+        
         xmlns:system="clr-namespace:System;assembly=System.Runtime"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800" Loaded="MainWindow_OnLoaded">
+        Title="MainWindow" Height="500" Width="1210" Loaded="MainWindow_OnLoaded">
     <Window.Resources>
         <CollectionViewSource x:Key="FlightViewSource" Source="{x:Null}"
                               d:DesignSource="{d:DesignInstance {x:Type local1:Flight}, CreateList=True}" />
@@ -16,108 +17,216 @@
         <CollectionViewSource x:Key="AiroportViewSource" Source="{x:Null}"
                               d:DesignSource="{d:DesignInstance {x:Type local1:Airport}, CreateList=True}" />
         <local:IsSelectedConverter x:Key="MySelectedConverter" />
+        <local1:Flight x:Key="FlightAdd" />
     </Window.Resources>
-    <Grid>
-        <TabControl Margin="10,10,10,10" TabStripPlacement="Left">
-            <TabItem Header="TabItem">
-                <Grid Background="#FFCD7F7F">
-                    <DataGrid x:Name="Datagrid1" DataContext="{StaticResource FlightViewSource}"
+    <xctk:BusyIndicator x:Name="MainBusy">
+        <Grid>
+            <TabControl Margin="10,10,10,10" TabStripPlacement="Left">
+                <TabItem Width="100" Header="TabItem">
+                    <Grid Background="#FFCD7F7F">
+                        <DataGrid x:Name="Datagrid1" DataContext="{StaticResource FlightViewSource}"
                               ItemsSource="{Binding}"
-                              Margin="10,10,31,60" AutoGenerateColumns="False" CanUserAddRows="False"
+                              Margin="0,0,0,130" AutoGenerateColumns="False" CanUserAddRows="False"
                               LoadingRow="Datagrid1_LoadingRow" EnableRowVirtualization="True"
                               RowDetailsVisibilityMode="VisibleWhenSelected" IsSynchronizedWithCurrentItem="False">
-                        <DataGrid.Columns>
+                            <DataGrid.Columns>
 
-                            <DataGridTemplateColumn Header="Номер рейса" SortMemberPath="Num">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate DataType="local1:Flight">
-                                        <xctk:IntegerUpDown
-                                            Text="{Binding Num,Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="Номер рейса" SortMemberPath="Num">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate DataType="local1:Flight">
+                                            <xctk:IntegerUpDown Minimum="1"
+                                                            Value="{Binding Num,Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
 
-                            <DataGridTemplateColumn Header="Аэропорт отправления" SortMemberPath="From.Name">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate DataType="local1:Flight">
-                                        <ComboBox
+                                <DataGridTemplateColumn Header="Аэропорт отправления" SortMemberPath="From.Name">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate DataType="local1:Flight">
+                                            <ComboBox
                                             Loaded="ComboBoxFlight_Loaded" DisplayMemberPath="Name"
-                                            SelectedValuePath="Id"
-                                            SelectedValue="{Binding FromId,Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
+                                            SelectedValuePath="Id">
+                                                <ComboBox.SelectedValue>
+                                                    <Binding Path="FromId" Mode="TwoWay"
+                                                         UpdateSourceTrigger="PropertyChanged">
+                                                        <Binding.ValidationRules>
+                                                            <DataErrorValidationRule />
+                                                        </Binding.ValidationRules>
+                                                    </Binding>
+                                                </ComboBox.SelectedValue>
+                                            </ComboBox>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
 
-                            <DataGridTemplateColumn Header="Время отправления" SortMemberPath="StartTime">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate DataType="local1:Flight">
-                                        <xctk:DateTimePicker
-                                            Value="{Binding StartTime, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="Время отправления" SortMemberPath="StartTime">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate DataType="local1:Flight">
+                                            <xctk:DateTimePicker>
+                                                <xctk:DateTimePicker.Value>
+                                                    <Binding Path="StartTime" Mode="TwoWay"
+                                                         UpdateSourceTrigger="PropertyChanged">
+                                                        <Binding.ValidationRules>
+                                                            <DataErrorValidationRule />
+                                                        </Binding.ValidationRules>
+                                                    </Binding>
+                                                </xctk:DateTimePicker.Value>
+                                            </xctk:DateTimePicker>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
 
-                            <DataGridTemplateColumn Header="Аэропорт прибытия" SortMemberPath="To.Name">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate DataType="local1:Flight">
-                                        <ComboBox
+                                <DataGridTemplateColumn Header="Аэропорт прибытия" SortMemberPath="To.Name">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate DataType="local1:Flight">
+                                            <ComboBox
                                             Loaded="ComboBoxFlight_Loaded" DisplayMemberPath="Name"
-                                            SelectedValuePath="Id"
-                                            SelectedValue="{Binding ToId,Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
+                                            SelectedValuePath="Id">
+                                                <ComboBox.SelectedValue>
+                                                    <Binding Path="ToId" Mode="TwoWay"
+                                                         UpdateSourceTrigger="PropertyChanged">
+                                                        <Binding.ValidationRules>
+                                                            <DataErrorValidationRule />
+                                                        </Binding.ValidationRules>
+                                                    </Binding>
+                                                </ComboBox.SelectedValue>
+                                            </ComboBox>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
 
-                            <DataGridTemplateColumn Header="Время прибытия" SortMemberPath="EndTime">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate DataType="local1:Flight">
-                                        <xctk:DateTimePicker
-                                            Value="{Binding EndTime, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="Время прибытия" SortMemberPath="EndTime">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate DataType="local1:Flight">
+                                            <xctk:DateTimePicker>
+                                                <xctk:DateTimePicker.Value>
+                                                    <Binding Path="EndTime" Mode="TwoWay"
+                                                         UpdateSourceTrigger="PropertyChanged">
+                                                        <Binding.ValidationRules>
+                                                            <DataErrorValidationRule />
+                                                        </Binding.ValidationRules>
+                                                    </Binding>
+                                                </xctk:DateTimePicker.Value>
 
-                            <DataGridTemplateColumn Header="Ожидаемый спрос" SortMemberPath="Demand">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate DataType="local1:Flight">
-                                        <xctk:DoubleUpDown
-                                            Value="{Binding Demand, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
+                                            </xctk:DateTimePicker>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
 
-                            <DataGridTemplateColumn Header="Стоимость билета(руб)" SortMemberPath="Price">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate DataType="local1:Flight">
-                                        <xctk:DoubleUpDown
-                                            Value="{Binding Price, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="Ожидаемый спрос" SortMemberPath="Demand">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate DataType="local1:Flight">
+                                            <xctk:DoubleUpDown Minimum="0"
+                                                           Value="{Binding Demand, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
 
-                        </DataGrid.Columns>
-                    </DataGrid>
-                    <Button x:Name="ButtonFlightDelete" Content="Удалить" HorizontalAlignment="Left"
-                            Margin="147,0,0,15"
+                                <DataGridTemplateColumn Header="Стоимость билета(руб)" SortMemberPath="Price">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate DataType="local1:Flight">
+                                            <xctk:DoubleUpDown Minimum="0"
+                                                           Value="{Binding Price, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <ScrollViewer Margin="0,0,108,0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Height="59" VerticalAlignment="Bottom" >
+                            <StackPanel  DataContext="{StaticResource FlightAdd}" Orientation="Horizontal"  VerticalAlignment="Bottom">
+                                <StackPanel Orientation="Vertical" Margin="0,0,10,0">
+                                    <TextBlock  Text="Номер рейса"/>
+                                    <xctk:IntegerUpDown Minimum="1" Value="{Binding Num,Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,0" />
+                                </StackPanel>
+                                <StackPanel Orientation="Vertical" Margin="0,0,10,0">
+                                    <TextBlock  Text="Аэропорт отправления"/>
+                                    <ComboBox Loaded="ComboBoxFlight_Loaded" DisplayMemberPath="Name" SelectedValuePath="Id">
+                                        <ComboBox.SelectedValue>
+                                            <Binding Path="FromId" Mode="TwoWay"
+                                                         UpdateSourceTrigger="PropertyChanged">
+                                                <Binding.ValidationRules>
+                                                    <DataErrorValidationRule />
+                                                </Binding.ValidationRules>
+                                            </Binding>
+                                        </ComboBox.SelectedValue>
+                                    </ComboBox>
+                                </StackPanel>
+                                <StackPanel Orientation="Vertical" Margin="0,0,10,0">
+                                    <TextBlock  Text="Время отправления"/>
+                                    <xctk:DateTimePicker>
+                                        <xctk:DateTimePicker.Value>
+                                            <Binding Path="StartTime" Mode="TwoWay"
+                                                         UpdateSourceTrigger="PropertyChanged">
+                                                <Binding.ValidationRules>
+                                                    <DataErrorValidationRule />
+                                                </Binding.ValidationRules>
+                                            </Binding>
+                                        </xctk:DateTimePicker.Value>
+                                    </xctk:DateTimePicker>
+                                </StackPanel>
+                                <StackPanel Orientation="Vertical" Margin="0,0,10,0">
+                                    <TextBlock  Text="Аэропорт прибытия"/>
+                                    <ComboBox Loaded="ComboBoxFlight_Loaded" DisplayMemberPath="Name" SelectedValuePath="Id">
+                                        <ComboBox.SelectedValue>
+                                            <Binding Path="ToId" Mode="TwoWay"
+                                                         UpdateSourceTrigger="PropertyChanged">
+                                                <Binding.ValidationRules>
+                                                    <DataErrorValidationRule />
+                                                </Binding.ValidationRules>
+                                            </Binding>
+                                        </ComboBox.SelectedValue>
+                                    </ComboBox>
+                                </StackPanel>
+                                <StackPanel Orientation="Vertical" Margin="0,0,10,0">
+                                    <TextBlock  Text="Время прибытия"/>
+                                    <xctk:DateTimePicker>
+                                        <xctk:DateTimePicker.Value>
+                                            <Binding Path="EndTime" Mode="TwoWay"
+                                                         UpdateSourceTrigger="PropertyChanged">
+                                                <Binding.ValidationRules>
+                                                    <DataErrorValidationRule />
+                                                </Binding.ValidationRules>
+                                            </Binding>
+                                        </xctk:DateTimePicker.Value>
+                                    </xctk:DateTimePicker>
+                                </StackPanel>
+                                <StackPanel Orientation="Vertical" Margin="0,0,10,0">
+                                    <TextBlock  Text="Ожидаемый спрос"/>
+                                    <xctk:DoubleUpDown Minimum="0" Value="{Binding Demand, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                                <StackPanel Orientation="Vertical" Margin="0,0,10,0">
+                                    <TextBlock  Text="Стоимость билета(руб)"/>
+                                    <xctk:DoubleUpDown Minimum="0" Value="{Binding Price, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <Button x:Name="ButtonFlightDelete" Content="Удалить" HorizontalAlignment="Left"
+                            Margin="842,0,0,86"
                             Height="20" VerticalAlignment="Bottom"
                             IsEnabled="{Binding ElementName=Datagrid1,Path=SelectedItem,
                             Converter={StaticResource MySelectedConverter}}"
                             Click="ButtonFlightDelete_Click" />
-                </Grid>
-            </TabItem>
-            <TabItem Header="TabItem">
-                <Grid Background="#FFCD7F7F">
-                    <Border Margin="149,0,10,10" BorderThickness="1" BorderBrush="Black" Height="155"
-                            VerticalAlignment="Bottom">
-                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
-                            <Canvas Margin="0" Width="1000" x:Name="MainCanvas" />
-                        </ScrollViewer>
-                    </Border>
+                        <Button IsEnabled="{Binding Source={StaticResource FlightAdd},Path=IsValid}" x:Name="ButtonFlightAdd" Content="Добавить рейс" Margin="0,0,10,3" VerticalAlignment="Bottom" Click="ButtonFlightAdd_Click" HorizontalAlignment="Right" Width="93"/>
 
-                    <Button Content="Button" HorizontalAlignment="Left" Margin="55,71,0,0" VerticalAlignment="Top"
+                    </Grid>
+                </TabItem>
+                <TabItem Header="TabItem">
+                    <Grid Background="#FFCD7F7F">
+                        <Border Margin="149,0,10,10" BorderThickness="1" BorderBrush="Black" Height="155"
+                            VerticalAlignment="Bottom">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+                                <Canvas Margin="0" Width="1000" x:Name="MainCanvas" />
+                            </ScrollViewer>
+                        </Border>
+
+                        <Button Content="Button" HorizontalAlignment="Left" Margin="55,71,0,0" VerticalAlignment="Top"
                             Click="Button_Click" />
-                </Grid>
-            </TabItem>
-        </TabControl>
-    </Grid>
+
+                    </Grid>
+                </TabItem>
+            </TabControl>
+        </Grid>
+    </xctk:BusyIndicator>
 </Window>

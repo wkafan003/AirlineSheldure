@@ -2,9 +2,11 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -18,6 +20,7 @@ using System.Windows.Shapes;
 using Google.OrTools.LinearSolver;
 using Microsoft.EntityFrameworkCore;
 using Model;
+using Xceed;
 
 namespace AirlineSheldure
 {
@@ -38,9 +41,14 @@ namespace AirlineSheldure
             }
 
             MainCanvas.Width = 14 * 100 + 35;
+            
 
+            
             _db = new ApplicationContext();
-
+            foreach (var flight in _db.Flights.AsEnumerable().Where(f=>f.EndTime.TimeOfDay==TimeSpan.Zero))
+            {
+                flight.EndTime += TimeSpan.FromDays(1);
+            }
 
             //Datagrid1.DataContext = db.Flights.Local.ToObservableCollection();
             //Datagrid1.ItemsSource = _db.Flights.Local.ToObservableCollection();
@@ -49,10 +57,11 @@ namespace AirlineSheldure
             //_db.Flights.RemoveRange(_db.Flights);
             //_db.SaveChanges();
 
-            AirlineRostering();
-            _db.SaveChanges();
-            CrewRostering();
-            _db.SaveChanges();
+            // AirlineRostering();
+            // _db.SaveChanges();
+            // CrewRostering();
+            // _db.SaveChanges();
+            
             Console.WriteLine();
             
         }
@@ -963,5 +972,59 @@ namespace AirlineSheldure
         {
             _db.Flights.RemoveRange(Datagrid1.SelectedItems.Cast<Flight>().ToArray());
         }
-    }
+
+		private void Button_Click_1(object sender, RoutedEventArgs e)
+		{
+            BackgroundWorker worker = new BackgroundWorker();
+            worker.WorkerSupportsCancellation = true;
+            worker.DoWork += (o, ea) =>
+            {
+                //List<String> listOfString = new List<string>();
+                //for (int i = 0; i < 10000000; i++)
+                //{
+                //    listOfString.Add(String.Format("Item: {0}", i));
+                //}
+                ////use the Dispatcher to delegate the listOfStrings collection back to the UI
+                //Dispatcher.Invoke((System.Action)(() => _listBox.ItemsSource = listOfString));
+                Thread.Sleep(1000 * 1);
+                worker.CancelAsync();
+                Thread.Sleep(1000 * 5);
+            };
+            worker.RunWorkerCompleted += (o, ea) =>
+            {
+                MainBusy.IsBusy = false;
+            };
+            MainBusy.IsBusy = true;
+            
+            worker.RunWorkerAsync();
+        }
+
+		private void ButtonFlightAdd_Click(object sender, RoutedEventArgs e)
+		{
+            Flight add,newFlight = null;
+			try
+			{
+                add = (Flight)FindResource("FlightAdd");
+                
+                newFlight = new Flight()
+                {
+                    FromId = add.FromId,
+                    StartTime = add.StartTime,
+                    ToId = add.ToId,
+                    EndTime = add.EndTime,
+                    Demand = add.Demand,
+                    Price = add.Price
+                };
+                _db.Flights.Add(newFlight);
+                _db.SaveChanges();
+            }
+            catch(Exception ee)
+			{
+                MessageBox.Show(ee.Message);
+                if(newFlight!=null)
+                    _db.Flights.Remove(newFlight);
+            }
+			Console.WriteLine("");
+		}
+	}
 }

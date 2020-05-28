@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.IO;
 using System.Linq;
@@ -44,7 +45,6 @@ namespace Model
                 .Entity<Flight>()
                 .HasIndex(f => f.Num)
                 .IsUnique();
-
             Flight[] flights;
             List<Flight> allFlights = new List<Flight>();
             for (int day = 0; day < 10; day++)
@@ -181,7 +181,7 @@ namespace Model
             get => _name;
             set
             {
-                if (_name==value) return;
+                if (_name == value) return;
                 _name = value;
                 OnPropertyChanged();
             }
@@ -192,7 +192,7 @@ namespace Model
             get => _fullname;
             set
             {
-                if(_fullname==value) return;
+                if (_fullname == value) return;
                 _fullname = value;
                 OnPropertyChanged();
             }
@@ -210,6 +210,7 @@ namespace Model
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
+
         public void OnPropertyChanged([CallerMemberName] string prop = "")
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
@@ -219,13 +220,13 @@ namespace Model
     /// <summary>
     /// Класс полета
     /// </summary>
-    public class Flight : INotifyPropertyChanged
+    public class Flight : INotifyPropertyChanged, IDataErrorInfo
     {
         private int _id;
         private int _num;
-        private int _fromId;
+        private int? _fromId;
         private Airport _from;
-        private int _toId;
+        private int? _toId;
         private Airport _to;
         private DateTime _startTime;
         private DateTime _endTime;
@@ -239,7 +240,7 @@ namespace Model
             get => _id;
             set
             {
-                if(_id==value) return;
+                if (_id == value) return;
                 _id = value;
                 OnPropertyChanged();
             }
@@ -250,18 +251,18 @@ namespace Model
             get => _num;
             set
             {
-                if(_num==value) return;
+                if (_num == value) return;
                 _num = value;
                 OnPropertyChanged();
             }
         }
 
-        public int FromId
+        public int? FromId
         {
             get => _fromId;
             set
             {
-                if(_fromId==value) return;
+                if (_fromId == value) return;
                 _fromId = value;
                 OnPropertyChanged();
             }
@@ -272,18 +273,18 @@ namespace Model
             get => _from;
             set
             {
-                if(_from==value) return;
+                if (_from == value) return;
                 _from = value;
                 OnPropertyChanged();
             }
         }
 
-        public int ToId
+        public int? ToId
         {
             get => _toId;
             set
             {
-                if(_toId==value) return;
+                if (_toId == value) return;
                 _toId = value;
                 OnPropertyChanged();
             }
@@ -294,7 +295,7 @@ namespace Model
             get => _to;
             set
             {
-                if(_to==value) return;
+                if (_to == value) return;
                 _to = value;
                 OnPropertyChanged();
             }
@@ -305,7 +306,7 @@ namespace Model
             get => _startTime;
             set
             {
-                if(_startTime==value) return;
+                if (_startTime == value) return;
                 _startTime = value;
                 OnPropertyChanged();
             }
@@ -316,7 +317,7 @@ namespace Model
             get => _endTime;
             set
             {
-                if(_endTime==value) return;
+                if (_endTime == value) return;
                 _endTime = value;
                 OnPropertyChanged();
             }
@@ -327,7 +328,7 @@ namespace Model
             get => _demand;
             set
             {
-                if(_demand==value) return;
+                if (_demand == value) return;
                 _demand = value;
                 OnPropertyChanged();
             }
@@ -338,7 +339,7 @@ namespace Model
             get => _price;
             set
             {
-                if(_price==value) return;
+                if (_price == value) return;
                 _price = value;
                 OnPropertyChanged();
             }
@@ -349,7 +350,7 @@ namespace Model
             get => _airplaneId;
             set
             {
-                if(_airplaneId==value) return;
+                if (_airplaneId == value) return;
                 _airplaneId = value;
                 OnPropertyChanged();
             }
@@ -360,7 +361,7 @@ namespace Model
             get => _airplane;
             set
             {
-                if(_airplane==value) return;
+                if (_airplane == value) return;
                 _airplane = value;
                 OnPropertyChanged();
             }
@@ -368,6 +369,7 @@ namespace Model
 
         public Flight()
         {
+            Errors = new Dictionary<string, string>();
         }
 
         public Flight(int id, int num, int fromId, int toId, DateTime startTime, DateTime endTime, double demand,
@@ -381,12 +383,97 @@ namespace Model
             this.EndTime = endTime;
             this.Demand = demand;
             this.Price = price;
+            Errors = new Dictionary<string, string>();
         }
+
         public event PropertyChangedEventHandler PropertyChanged;
+
         public void OnPropertyChanged([CallerMemberName] string prop = "")
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
         }
+
+        public string this[string columnName]
+        {
+            get
+            {
+                string error = String.Empty;
+                bool isValidChange = false;
+                switch (columnName)
+                {
+                    case "StartTime":
+                        if (StartTime - EndTime>TimeSpan.Zero)
+                        {
+                            error = "Дата отправления должна быть меньше даты прибытия!";
+                            Errors["StartTime"] = error;
+                        }
+						else
+						{
+                            Errors["StartTime"] = null;
+                        }
+                        isValidChange = true;
+                        break;
+                    case "EndTime":
+                        if (StartTime >= EndTime)
+                        {
+                            error = "Дата прибытия должна быть больше даты отправления!";
+                            Errors["EndTime"] = error;
+                        }
+                        else
+                        {
+                            Errors["EndTime"] = null;
+                        }
+                        isValidChange = true;
+                        break;
+                    case "FromId":
+                        if (FromId == null)
+                        {
+                            error = "Укажите аэропорт отправления!";
+                            Errors["FromId"] = error;
+                        }
+                        else if (FromId == ToId)
+                        {
+                            error = "Аэропорты отправления и прибытия должны различаться!";
+                            Errors["FromId"] = error;
+                        }
+                        else
+                        {
+                            Errors["FromId"] = null;
+                        }
+                        isValidChange = true;
+                        break;
+                    case "ToId":
+                        if (ToId == null)
+                        {
+                            error = "Укажите аэропорт прибытия!";
+                            Errors["ToId"] = error;
+                        }
+                        else if (FromId == ToId)
+                        {
+                            error = "Аэропорты отправления и прибытия должны различаться!";
+                            Errors["ToId"] = error;
+                        }
+                        else
+                        {
+                            Errors["ToId"] = null;
+                        }
+                        isValidChange = true;
+                        break;
+                }
+                if(isValidChange) OnPropertyChanged("IsValid");
+                return error;
+            }
+        }
+        [NotMapped]
+        public string Error
+        {
+			get { throw new NotImplementedException(); }
+        }
+        [NotMapped]
+        public Dictionary<string, string> Errors;
+        [NotMapped]
+        public bool IsValid => !Errors.Values.Any(x => !string.IsNullOrEmpty(x));
+
     }
 
     /// <summary>
@@ -403,7 +490,7 @@ namespace Model
             get => _id;
             set
             {
-                if(_id==value) return;
+                if (_id == value) return;
                 _id = value;
                 OnPropertyChanged();
             }
@@ -416,7 +503,7 @@ namespace Model
             get => _airplaneId;
             set
             {
-                if(_airplaneId==value) return;
+                if (_airplaneId == value) return;
                 _airplaneId = value;
                 OnPropertyChanged();
             }
@@ -427,7 +514,7 @@ namespace Model
             get => _airplane;
             set
             {
-                if(_airplane==value) return;
+                if (_airplane == value) return;
                 _airplane = value;
                 OnPropertyChanged();
             }
@@ -453,7 +540,9 @@ namespace Model
 
             return buf;
         }
+
         public event PropertyChangedEventHandler PropertyChanged;
+
         public void OnPropertyChanged([CallerMemberName] string prop = "")
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
@@ -463,7 +552,7 @@ namespace Model
     /// <summary>
     /// Класс воздушного судна
     /// </summary>
-    public class Airplane: INotifyPropertyChanged
+    public class Airplane : INotifyPropertyChanged
     {
         private int _id;
         private string _name;
@@ -476,7 +565,7 @@ namespace Model
             get => _id;
             set
             {
-                if(_id==value) return;
+                if (_id == value) return;
                 _id = value;
                 OnPropertyChanged();
             }
@@ -487,7 +576,7 @@ namespace Model
             get => _name;
             set
             {
-                if(_name==value) return;
+                if (_name == value) return;
                 _name = value;
                 OnPropertyChanged();
             }
@@ -498,7 +587,7 @@ namespace Model
             get => _count;
             set
             {
-                if(_count==value) return;
+                if (_count == value) return;
                 _count = value;
                 OnPropertyChanged();
             }
@@ -509,7 +598,7 @@ namespace Model
             get => _cost;
             set
             {
-                if(_cost==value) return;
+                if (_cost == value) return;
                 _cost = value;
                 OnPropertyChanged();
             }
@@ -520,13 +609,14 @@ namespace Model
             get => _capacity;
             set
             {
-                if(_capacity==value) return;
+                if (_capacity == value) return;
                 _capacity = value;
                 OnPropertyChanged();
             }
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
+
         public void OnPropertyChanged([CallerMemberName] string prop = "")
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
@@ -537,7 +627,7 @@ namespace Model
     /// <summary>
     /// Оборотное время (время обсуживания)
     /// </summary>
-    public class TurnTime :INotifyPropertyChanged
+    public class TurnTime : INotifyPropertyChanged
     {
         private int _id;
         private int _airplaneId;
@@ -551,7 +641,7 @@ namespace Model
             get => _id;
             set
             {
-                if(_id==value) return;
+                if (_id == value) return;
                 _id = value;
                 OnPropertyChanged();
             }
@@ -562,7 +652,7 @@ namespace Model
             get => _airplaneId;
             set
             {
-                if(_airplaneId==value) return;
+                if (_airplaneId == value) return;
                 _airplaneId = value;
                 OnPropertyChanged();
             }
@@ -573,7 +663,7 @@ namespace Model
             get => _airplane;
             set
             {
-                if(_airplane==value) return;
+                if (_airplane == value) return;
                 _airplane = value;
                 OnPropertyChanged();
             }
@@ -584,7 +674,7 @@ namespace Model
             get => _airportId;
             set
             {
-                if(_airportId==value) return;
+                if (_airportId == value) return;
                 _airportId = value;
                 OnPropertyChanged();
             }
@@ -595,7 +685,7 @@ namespace Model
             get => _airport;
             set
             {
-                if(_airport==value) return;
+                if (_airport == value) return;
                 _airport = value;
                 OnPropertyChanged();
             }
@@ -606,13 +696,14 @@ namespace Model
             get => _time;
             set
             {
-                if(_time==value) return;
+                if (_time == value) return;
                 _time = value;
                 OnPropertyChanged();
             }
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
+
         public void OnPropertyChanged([CallerMemberName] string prop = "")
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
@@ -622,7 +713,7 @@ namespace Model
     /// <summary>
     /// Член экипажа
     /// </summary>
-    public class Crewmember: INotifyPropertyChanged
+    public class Crewmember : INotifyPropertyChanged
     {
         private int _id;
         private int _baseId;
@@ -637,7 +728,7 @@ namespace Model
             get => _id;
             set
             {
-                if(_id==value) return;
+                if (_id == value) return;
                 _id = value;
                 OnPropertyChanged();
             }
@@ -648,7 +739,7 @@ namespace Model
             get => _baseId;
             set
             {
-                if(_baseId==value) return;
+                if (_baseId == value) return;
                 _baseId = value;
                 OnPropertyChanged();
             }
@@ -659,7 +750,7 @@ namespace Model
             get => _base;
             set
             {
-                if(_base==value) return;
+                if (_base == value) return;
                 _base = value;
                 OnPropertyChanged();
             }
@@ -670,7 +761,7 @@ namespace Model
             get => _firstName;
             set
             {
-                if(_firstName==value) return;
+                if (_firstName == value) return;
                 _firstName = value;
                 OnPropertyChanged();
             }
@@ -681,7 +772,7 @@ namespace Model
             get => _lastName;
             set
             {
-                if(_lastName==value) return;
+                if (_lastName == value) return;
                 _lastName = value;
                 OnPropertyChanged();
             }
@@ -699,6 +790,7 @@ namespace Model
                     FirstName = args[0];
                     LastName = args[1];
                 }
+
                 OnPropertyChanged();
             }
         }
@@ -708,7 +800,7 @@ namespace Model
             get => _rosterId;
             set
             {
-                if(_rosterId==value) return;
+                if (_rosterId == value) return;
                 _rosterId = value;
                 OnPropertyChanged();
             }
@@ -719,7 +811,7 @@ namespace Model
             get => _roster;
             set
             {
-                if(_roster==value) return;
+                if (_roster == value) return;
                 _roster = value;
                 OnPropertyChanged();
             }
@@ -731,7 +823,9 @@ namespace Model
         {
             Permissions = new ObservableCollection<Permission>();
         }
+
         public event PropertyChangedEventHandler PropertyChanged;
+
         public void OnPropertyChanged([CallerMemberName] string prop = "")
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
@@ -760,7 +854,7 @@ namespace Model
             get => _id;
             set
             {
-                if(_id==value) return;
+                if (_id == value) return;
                 _id = value;
                 OnPropertyChanged();
             }
@@ -773,7 +867,7 @@ namespace Model
             get => _crewmemberFirstId;
             set
             {
-                if(_crewmemberFirstId==value) return;
+                if (_crewmemberFirstId == value) return;
                 _crewmemberFirstId = value;
                 OnPropertyChanged();
             }
@@ -784,7 +878,7 @@ namespace Model
             get => _crewmemberFirst;
             set
             {
-                if(_crewmemberFirst==value) return;
+                if (_crewmemberFirst == value) return;
                 _crewmemberFirst = value;
                 OnPropertyChanged();
             }
@@ -795,7 +889,7 @@ namespace Model
             get => _crewmemberSecondId;
             set
             {
-                if(_crewmemberSecondId==value) return;
+                if (_crewmemberSecondId == value) return;
                 _crewmemberSecondId = value;
                 OnPropertyChanged();
             }
@@ -806,7 +900,7 @@ namespace Model
             get => _crewmemberSecond;
             set
             {
-                if(_crewmemberSecond==value) return;
+                if (_crewmemberSecond == value) return;
                 _crewmemberSecond = value;
                 OnPropertyChanged();
             }
@@ -817,7 +911,7 @@ namespace Model
             get => _airplaneId;
             set
             {
-                if(_airplaneId==value) return;
+                if (_airplaneId == value) return;
                 _airplaneId = value;
                 OnPropertyChanged();
             }
@@ -828,7 +922,7 @@ namespace Model
             get => _airplane;
             set
             {
-                if(_airplane==value) return;
+                if (_airplane == value) return;
                 _airplane = value;
                 OnPropertyChanged();
             }
@@ -839,7 +933,7 @@ namespace Model
             get => _flyTime;
             set
             {
-                if(_flyTime==value) return;
+                if (_flyTime == value) return;
                 _flyTime = value;
                 OnPropertyChanged();
             }
@@ -850,7 +944,7 @@ namespace Model
             get => _elapseTime;
             set
             {
-                if(_elapseTime==value) return;
+                if (_elapseTime == value) return;
                 _elapseTime = value;
                 OnPropertyChanged();
             }
@@ -861,7 +955,7 @@ namespace Model
             get => _startTime;
             set
             {
-                if(_startTime==value) return;
+                if (_startTime == value) return;
                 _startTime = value;
                 OnPropertyChanged();
             }
@@ -872,7 +966,7 @@ namespace Model
             get => _endTime;
             set
             {
-                if(_endTime==value) return;
+                if (_endTime == value) return;
                 _endTime = value;
                 OnPropertyChanged();
             }
@@ -898,7 +992,9 @@ namespace Model
 
             return buf;
         }
+
         public event PropertyChangedEventHandler PropertyChanged;
+
         public void OnPropertyChanged([CallerMemberName] string prop = "")
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
@@ -920,7 +1016,7 @@ namespace Model
             get => _id;
             set
             {
-                if(_id==value) return;
+                if (_id == value) return;
                 _id = value;
                 OnPropertyChanged();
             }
@@ -933,7 +1029,7 @@ namespace Model
             get => _airplaneId;
             set
             {
-                if(_airplaneId==value) return;
+                if (_airplaneId == value) return;
                 _airplaneId = value;
                 OnPropertyChanged();
             }
@@ -944,7 +1040,7 @@ namespace Model
             get => _airplane;
             set
             {
-                if(_airplane==value) return;
+                if (_airplane == value) return;
                 _airplane = value;
                 OnPropertyChanged();
             }
@@ -955,7 +1051,7 @@ namespace Model
             get => _flyTime;
             set
             {
-                if(_flyTime==value) return;
+                if (_flyTime == value) return;
                 _flyTime = value;
                 OnPropertyChanged();
             }
@@ -966,7 +1062,7 @@ namespace Model
             get => _elapseTime;
             set
             {
-                if(_elapseTime==value) return;
+                if (_elapseTime == value) return;
                 _elapseTime = value;
                 OnPropertyChanged();
             }
@@ -977,7 +1073,7 @@ namespace Model
             get => _startTime;
             set
             {
-                if(_startTime==value) return;
+                if (_startTime == value) return;
                 _startTime = value;
                 OnPropertyChanged();
             }
@@ -988,7 +1084,7 @@ namespace Model
             get => _endTime;
             set
             {
-                if(_endTime==value) return;
+                if (_endTime == value) return;
                 _endTime = value;
                 OnPropertyChanged();
             }
@@ -1014,7 +1110,9 @@ namespace Model
 
             return buf;
         }
+
         public event PropertyChangedEventHandler PropertyChanged;
+
         public void OnPropertyChanged([CallerMemberName] string prop = "")
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
@@ -1038,7 +1136,7 @@ namespace Model
             get => _id;
             set
             {
-                if(_id==value) return;
+                if (_id == value) return;
                 _id = value;
                 OnPropertyChanged();
             }
@@ -1049,7 +1147,7 @@ namespace Model
             get => _airplaneId;
             set
             {
-                if(_airplaneId==value) return;
+                if (_airplaneId == value) return;
                 _airplaneId = value;
                 OnPropertyChanged();
             }
@@ -1060,7 +1158,7 @@ namespace Model
             get => _airplane;
             set
             {
-                if(_airplane==value) return;
+                if (_airplane == value) return;
                 _airplane = value;
                 OnPropertyChanged();
             }
@@ -1071,7 +1169,7 @@ namespace Model
             get => _firstPilot;
             set
             {
-                if(_firstPilot==value) return;
+                if (_firstPilot == value) return;
                 _firstPilot = value;
                 OnPropertyChanged();
             }
@@ -1082,7 +1180,7 @@ namespace Model
             get => _secondPilot;
             set
             {
-                if(_secondPilot==value) return;
+                if (_secondPilot == value) return;
                 _secondPilot = value;
                 OnPropertyChanged();
             }
@@ -1093,7 +1191,7 @@ namespace Model
             get => _crewmemberId;
             set
             {
-                if(_crewmemberId==value) return;
+                if (_crewmemberId == value) return;
                 _crewmemberId = value;
                 OnPropertyChanged();
             }
@@ -1101,6 +1199,7 @@ namespace Model
 
         public virtual Crewmember Crewmember { get; set; }
         public event PropertyChangedEventHandler PropertyChanged;
+
         public void OnPropertyChanged([CallerMemberName] string prop = "")
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
@@ -1121,7 +1220,7 @@ namespace Model
             get => _id;
             set
             {
-                if(_id==value) return;
+                if (_id == value) return;
                 _id = value;
                 OnPropertyChanged();
             }
@@ -1134,7 +1233,7 @@ namespace Model
             get => _flyTime;
             set
             {
-                if(_flyTime==value) return;
+                if (_flyTime == value) return;
                 _flyTime = value;
                 OnPropertyChanged();
             }
@@ -1145,7 +1244,7 @@ namespace Model
             get => _elapseTime;
             set
             {
-                if(_elapseTime==value) return;
+                if (_elapseTime == value) return;
                 _elapseTime = value;
                 OnPropertyChanged();
             }
@@ -1155,7 +1254,9 @@ namespace Model
         {
             Actions = new ObservableCollection<Action>();
         }
+
         public event PropertyChangedEventHandler PropertyChanged;
+
         public void OnPropertyChanged([CallerMemberName] string prop = "")
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
@@ -1179,7 +1280,7 @@ namespace Model
             get => _id;
             set
             {
-                if(_id==value) return;
+                if (_id == value) return;
                 _id = value;
                 OnPropertyChanged();
             }
@@ -1190,7 +1291,7 @@ namespace Model
             get => _description;
             set
             {
-                if(_description==value) return;
+                if (_description == value) return;
                 _description = value;
                 OnPropertyChanged();
             }
@@ -1201,7 +1302,7 @@ namespace Model
             get => _actionTypeId;
             set
             {
-                if(_actionTypeId==value) return;
+                if (_actionTypeId == value) return;
                 _actionTypeId = value;
                 OnPropertyChanged();
             }
@@ -1212,7 +1313,7 @@ namespace Model
             get => _actionType;
             set
             {
-                if(_actionType==value) return;
+                if (_actionType == value) return;
                 _actionType = value;
                 OnPropertyChanged();
             }
@@ -1223,7 +1324,7 @@ namespace Model
             get => _startTime;
             set
             {
-                if(_startTime==value) return;
+                if (_startTime == value) return;
                 _startTime = value;
                 OnPropertyChanged();
             }
@@ -1234,13 +1335,14 @@ namespace Model
             get => _endTime;
             set
             {
-                if(_endTime==value) return;
+                if (_endTime == value) return;
                 _endTime = value;
                 OnPropertyChanged();
             }
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
+
         public void OnPropertyChanged([CallerMemberName] string prop = "")
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
@@ -1260,7 +1362,7 @@ namespace Model
             get => _id;
             set
             {
-                if(_id==value) return;
+                if (_id == value) return;
                 _id = value;
                 OnPropertyChanged();
             }
@@ -1271,13 +1373,14 @@ namespace Model
             get => _type;
             set
             {
-                if(_type==value) return;
+                if (_type == value) return;
                 _type = value;
                 OnPropertyChanged();
             }
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
+
         public void OnPropertyChanged([CallerMemberName] string prop = "")
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
