@@ -53,6 +53,7 @@ namespace Model
                 .Entity<Airplane>()
                 .HasIndex(a=>a.Name)
                 .IsUnique();
+            modelBuilder.Entity<Airport>().Property(a => a.Name).HasMaxLength(3);
             Flight[] flights;
             List<Flight> allFlights = new List<Flight>();
             for (int day = 0; day < 10; day++)

@@ -935,7 +935,7 @@ namespace AirlineSheldure
             MessageBox.Show(" ");
         }
 
-        private void Datagrid1_LoadingRow(object sender, DataGridRowEventArgs e)
+        private void Datagrid_LoadingRow(object sender, DataGridRowEventArgs e)
         {
             e.Row.Header = (e.Row.GetIndex() + 1).ToString();
         }
@@ -975,13 +975,13 @@ namespace AirlineSheldure
 
         private void ButtonFlightDelete_Click(object sender, RoutedEventArgs e)
         {
-            int count = Datagrid1.SelectedItems.Count;
+            int count = DatagridFlight.SelectedItems.Count;
             if (MessageBox.Show(this, $"Удалить {count} рейсов. Вы уверены?", "Удаление рейсов",
-                MessageBoxButton.OKCancel) == MessageBoxResult.Yes)
+                MessageBoxButton.OKCancel) == MessageBoxResult.OK)
             {
                 try
                 {
-                    _db.Flights.RemoveRange(Datagrid1.SelectedItems.Cast<Flight>().ToArray());
+                    _db.Flights.RemoveRange(DatagridFlight.SelectedItems.Cast<Flight>().ToArray());
                     _db.SaveChanges();
                 }
                 catch (DbUpdateException ee)
@@ -1114,5 +1114,107 @@ namespace AirlineSheldure
                 MessageBox.Show("Ошибка чтения файла! " + ee.Message,"Ошибка");
             }
         }
-    }
+
+		private void ButtonAiroportDelete_Click(object sender, RoutedEventArgs e)
+		{
+            int count = DatagridAiroport.SelectedItems.Count;
+            if (MessageBox.Show(this, $"Удалить {count} аэропортов. Вы уверены?", "Удаление аэропортов",
+                MessageBoxButton.OKCancel) == MessageBoxResult.OK)
+            {
+                try
+                {
+                    var airports = DatagridAiroport.SelectedItems.Cast<Airport>().ToArray();
+					foreach (var airport in airports)
+					{
+
+                        _db.TurnTimes.RemoveRange(_db.TurnTimes.Where(t => t.AirportId == airport.Id));
+					}
+                    _db.Airports.RemoveRange(airports);
+                    _db.SaveChanges();
+                }
+                catch (DbUpdateException ee)
+                {
+                    MessageBox.Show("Ошибка удаления аэропортов!", "Непредвиденная ошибка");
+                }
+                catch (Exception ee)
+                {
+                    MessageBox.Show(ee.Message);
+                }
+            }
+        }
+
+		private void ButtonAiroportLoad_Click(object sender, RoutedEventArgs e)
+		{
+            OpenFileDialog op = new OpenFileDialog()
+            {
+                Filter = "Текстовые файлы (*.txt)|*.txt|Все файлы (*.*)|*.*",
+            };
+            try
+            {
+                if (op.ShowDialog() == true)
+                {
+                    List<Airport> airports = new List<Airport>();
+                    string[][] source = File.ReadAllLines(op.FileName).Where(s => !s.StartsWith("#"))
+                        .Select(s => s.Split()).ToArray();
+                    foreach (var s in source)
+                    {
+                        string name = s[0];
+                        if(name.Length != 3 | name.Any(c => !char.IsLetter(c))){
+                            MessageBox.Show("Неверный код аэропорта ", "Ошибка");
+                        }
+                        string fullname = s[1].Trim('"');
+                        airports.Add(new Airport()
+                        {
+                            Name=name,
+                            Fullname=fullname,
+                        });
+                    }
+
+                    _db.Airports.RemoveRange(_db.Airports);
+                    _db.Airports.AddRange(airports.OrderBy(i=>i.Name));
+                    _db.SaveChanges();
+                }
+            }
+            catch (DbUpdateException ee)
+            {
+                MessageBox.Show("Ошибка записи в базу данных! ", "Ошибка");
+            }
+            catch (Exception ee)
+            {
+                MessageBox.Show("Ошибка чтения файла! " + ee.Message, "Ошибка");
+            }
+        }
+
+		private void ButtonAirportAdd_Click(object sender, RoutedEventArgs e)
+		{
+            Airport add, newAirport = null;
+            try
+            {
+                add = (Airport)FindResource("AirportAdd");
+
+                newAirport = new Airport()
+                {
+                    Name=add.Name,
+                    Fullname=add.Fullname
+                };
+
+                _db.Airports.Add(newAirport);
+                _db.SaveChanges();
+            }
+
+            catch (DbUpdateException ee)
+            {
+                MessageBox.Show("Ошибка добавления аэропорта! Проверьте, является ли значение кода ИАТА уникальным, а его длина составляет 3 символа.",
+                    "Ошибка добавления аэропрта");
+                if (newAirport != null)
+                    _db.Airports.Remove(newAirport);
+            }
+            catch (Exception ee)
+            {
+                MessageBox.Show(ee.Message);
+            }
+
+            Console.WriteLine("");
+        }
+	}
 }
