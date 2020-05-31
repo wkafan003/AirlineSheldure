@@ -206,9 +206,11 @@ namespace Model
                 OnPropertyChanged();
             }
         }
+        public virtual IList<TurnTime> TurnTimes { get; }
 
         public Airport()
         {
+            TurnTimes = new ObservableCollection<TurnTime>();
         }
 
         public Airport(int id, string name, string fullname)
@@ -216,6 +218,7 @@ namespace Model
             Id = id;
             Name = name;
             Fullname = fullname;
+            TurnTimes = new ObservableCollection<TurnTime>();
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -519,6 +522,10 @@ namespace Model
         private double _cost;
         private int _capacity;
 
+        public Airplane()
+		{
+            TurnTimes = new ObservableCollection<TurnTime>();
+		}
         public int Id
         {
             get => _id;
@@ -573,6 +580,7 @@ namespace Model
                 OnPropertyChanged();
             }
         }
+        public virtual IList<TurnTime> TurnTimes { get; }
 
         public event PropertyChangedEventHandler PropertyChanged;
 

@@ -17,6 +17,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="data\Авиапарк.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="data\Аэропорты.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
