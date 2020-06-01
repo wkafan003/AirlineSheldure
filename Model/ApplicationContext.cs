@@ -104,14 +104,14 @@ namespace Model
             });
             Crewmember[] crewmembers = new Crewmember[]
             {
-                new Crewmember() {Id = -8, Fullname = "Иван Петров", BaseId = -4},
-                new Crewmember() {Id = -7, Fullname = "Антон Краснов", BaseId = -4},
-                new Crewmember() {Id = -6, Fullname = "Артем Соловьев", BaseId = -3},
-                new Crewmember() {Id = -5, Fullname = "Максим Сидоров", BaseId = -3},
-                new Crewmember() {Id = -4, Fullname = "Илья Козырев", BaseId = -2},
-                new Crewmember() {Id = -3, Fullname = "Андрей Морозов", BaseId = -2},
-                new Crewmember() {Id = -2, Fullname = "Владимир Иванов", BaseId = -1},
-                new Crewmember() {Id = -1, Fullname = "Никита Горелов", BaseId = -1},
+                new Crewmember() {Id = -8, Fullname = "Иван Петров Григорьевич", BaseId = -4},
+                new Crewmember() {Id = -7, Fullname = "Антон Краснов Григорьевич", BaseId = -4},
+                new Crewmember() {Id = -6, Fullname = "Артем Соловьев Григорьевич", BaseId = -3},
+                new Crewmember() {Id = -5, Fullname = "Максим Сидоров Григорьевич", BaseId = -3},
+                new Crewmember() {Id = -4, Fullname = "Илья Козырев Григорьевич", BaseId = -2},
+                new Crewmember() {Id = -3, Fullname = "Андрей Морозов Григорьевич", BaseId = -2},
+                new Crewmember() {Id = -2, Fullname = "Владимир Иванов Григорьевич", BaseId = -1},
+                new Crewmember() {Id = -1, Fullname = "Никита Горелов Григорьевич", BaseId = -1},
             };
             modelBuilder.Entity<Crewmember>().HasData(crewmembers);
             Roster[] rosters = new Roster[crewmembers.Length];
@@ -677,132 +677,142 @@ namespace Model
         }
     }
 
-    /// <summary>
-    /// Член экипажа
-    /// </summary>
-    public class Crewmember : INotifyPropertyChanged
-    {
-        private int _id;
-        private int _baseId;
-        private Airport _base;
-        private string _firstName;
+	/// <summary>
+	/// Член экипажа
+	/// </summary>
+	public class Crewmember : INotifyPropertyChanged
+	{
+		private int _id;
+		private int _baseId;
+		private Airport _base;
+		private string _firstName;
+        private string _secondName;
         private string _lastName;
-        private int? _rosterId;
-        private Roster _roster;
+		private int? _rosterId;
+		private Roster _roster;
+		
+		public int Id
+		{
+			get => _id;
+			set
+			{
+				if (_id == value) return;
+				_id = value;
+				OnPropertyChanged();
+			}
+		}
 
-        public int Id
+		public int BaseId
+		{
+			get => _baseId;
+			set
+			{
+				if (_baseId == value) return;
+				_baseId = value;
+				OnPropertyChanged();
+			}
+		}
+
+		public virtual Airport Base
+		{
+			get => _base;
+			set
+			{
+				if (_base == value) return;
+				_base = value;
+				OnPropertyChanged();
+			}
+		}
+
+		public string FirstName
+		{
+			get => _firstName;
+			set
+			{
+				if (_firstName == value) return;
+				_firstName = value;
+				OnPropertyChanged();
+			}
+		}
+		public string SecondName
         {
-            get => _id;
-            set
+            get => _secondName; set
             {
-                if (_id == value) return;
-                _id = value;
+                if (_secondName == value) return;
+                _secondName = value;
                 OnPropertyChanged();
             }
         }
+		public string LastName
+		{
+			get => _lastName;
+			set
+			{
+				if (_lastName == value) return;
+				_lastName = value;
+				OnPropertyChanged();
+			}
+		}
 
-        public int BaseId
-        {
-            get => _baseId;
-            set
-            {
-                if (_baseId == value) return;
-                _baseId = value;
-                OnPropertyChanged();
-            }
-        }
+		[NotMapped]
+		public string Fullname
+		{
+			get { return $"{FirstName} {SecondName} {LastName}"; }
+			set
+			{
+				string[] args = value.Split();
+				if (args.Length == 3)
+				{
+					FirstName = args[0];
+					SecondName = args[1];
+					LastName = args[2];
+				}
 
-        public virtual Airport Base
-        {
-            get => _base;
-            set
-            {
-                if (_base == value) return;
-                _base = value;
-                OnPropertyChanged();
-            }
-        }
+				OnPropertyChanged();
+			}
+		}
 
-        public string FirstName
-        {
-            get => _firstName;
-            set
-            {
-                if (_firstName == value) return;
-                _firstName = value;
-                OnPropertyChanged();
-            }
-        }
+		public int? RosterId
+		{
+			get => _rosterId;
+			set
+			{
+				if (_rosterId == value) return;
+				_rosterId = value;
+				OnPropertyChanged();
+			}
+		}
 
-        public string LastName
-        {
-            get => _lastName;
-            set
-            {
-                if (_lastName == value) return;
-                _lastName = value;
-                OnPropertyChanged();
-            }
-        }
+		public virtual Roster Roster
+		{
+			get => _roster;
+			set
+			{
+				if (_roster == value) return;
+				_roster = value;
+				OnPropertyChanged();
+			}
+		}
 
-        [NotMapped]
-        public string Fullname
-        {
-            get { return $"{FirstName} {LastName}"; }
-            set
-            {
-                string[] args = value.Split();
-                if (args.Length == 2)
-                {
-                    FirstName = args[0];
-                    LastName = args[1];
-                }
+		public virtual IList<Permission> Permissions { get; set; }
 
-                OnPropertyChanged();
-            }
-        }
+		public Crewmember()
+		{
+			Permissions = new ObservableCollection<Permission>();
+		}
 
-        public int? RosterId
-        {
-            get => _rosterId;
-            set
-            {
-                if (_rosterId == value) return;
-                _rosterId = value;
-                OnPropertyChanged();
-            }
-        }
+		public event PropertyChangedEventHandler PropertyChanged;
 
-        public virtual Roster Roster
-        {
-            get => _roster;
-            set
-            {
-                if (_roster == value) return;
-                _roster = value;
-                OnPropertyChanged();
-            }
-        }
+		public void OnPropertyChanged([CallerMemberName] string prop = "")
+		{
+			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
+		}
+	}
 
-        public virtual IList<Permission> Permissions { get; set; }
-
-        public Crewmember()
-        {
-            Permissions = new ObservableCollection<Permission>();
-        }
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        public void OnPropertyChanged([CallerMemberName] string prop = "")
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
-        }
-    }
-
-    /// <summary>
-    /// Класс связки для членов экипажа. Содержит набор дежурств
-    /// </summary>
-    public class CrewmemberPair : INotifyPropertyChanged
+	/// <summary>
+	/// Класс связки для членов экипажа. Содержит набор дежурств
+	/// </summary>
+	public class CrewmemberPair : INotifyPropertyChanged
     {
         private int _id;
         private int? _crewmemberFirstId;
@@ -1365,6 +1375,6 @@ namespace Model
         WaitingNewFly,
         Training,
         FlyFirst,
-        FliSecond
+        FlySecond
     }
 }

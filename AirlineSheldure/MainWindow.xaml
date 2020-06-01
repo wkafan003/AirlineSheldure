@@ -7,7 +7,7 @@
         xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
         xmlns:system="clr-namespace:System;assembly=System.Runtime"
         mc:Ignorable="d"
-        Title="MainWindow" Height="597" Width="1240" Loaded="MainWindow_OnLoaded">
+        Title="MainWindow" Height="750" Width="1250" Loaded="MainWindow_OnLoaded">
     <Window.Resources>
         <CollectionViewSource x:Key="FlightViewSource" Source="{x:Null}"
                               d:DesignSource="{d:DesignInstance {x:Type local1:Flight}, CreateList=True}" />
@@ -15,11 +15,15 @@
                               d:DesignSource="{d:DesignInstance {x:Type local1:Airplane}, CreateList=True}" />
         <CollectionViewSource x:Key="AiroportViewSource" Source="{x:Null}"
                               d:DesignSource="{d:DesignInstance {x:Type local1:Airport}, CreateList=True}" />
+        <CollectionViewSource x:Key="CrewmemberViewSource" Source="{x:Null}"
+                              d:DesignSource="{d:DesignInstance {x:Type local1:Crewmember}, CreateList=True}" />
         <local:IsSelectedConverter x:Key="MySelectedConverter" />
+        <local:DateTimeToTimeSpanConverter x:Key="MyTimeConveter" />
         <local1:Flight x:Key="FlightAdd" StartTime="{x:Static local:DateTimeHelper.Today}"
-                       EndTime="{x:Static local:DateTimeHelper.TodayPlusHour}" FromId="{x:Null}" ToId="{x:Null}"/>
+                       EndTime="{x:Static local:DateTimeHelper.TodayPlusHour}" FromId="{x:Null}" ToId="{x:Null}" />
         <local1:Airport x:Key="AirportAdd" />
         <local1:Airplane x:Key="AirplaneAdd" />
+        <local1:Crewmember x:Key="CrewmemberAdd" />
     </Window.Resources>
     <xctk:BusyIndicator x:Name="MainBusy">
         <Grid>
@@ -32,7 +36,8 @@
                                   LoadingRow="Datagrid_LoadingRow" EnableRowVirtualization="True"
                                   RowDetailsVisibilityMode="VisibleWhenSelected" IsSynchronizedWithCurrentItem="False">
                             <DataGrid.Columns>
-                                <DataGridTemplateColumn Header="Код аэропорта ИАТА" ClipboardContentBinding="{Binding Name}" SortMemberPath="Name">
+                                <DataGridTemplateColumn Header="Код аэропорта ИАТА"
+                                                        ClipboardContentBinding="{Binding Name}" SortMemberPath="Name">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate DataType="local1:Airport">
                                             <xctk:MaskedTextBox Text="{Binding Name}" Mask="LLL"
@@ -75,35 +80,71 @@
                 <TabItem Header="Парк воздушных судов">
                     <Grid>
                         <DataGrid x:Name="DatagridAirplane" DataContext="{StaticResource AirplaneViewSource}"
-                                  ItemsSource="{Binding}" Margin="0,0,0,125"
+                                  ItemsSource="{Binding}" Margin="0,0,0,321"
                                   AutoGenerateColumns="False" CanUserAddRows="False"
                                   LoadingRow="Datagrid_LoadingRow" EnableRowVirtualization="True"
                                   RowDetailsVisibilityMode="VisibleWhenSelected" IsSynchronizedWithCurrentItem="False">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="Название ВС" Binding="{Binding Name}"/>
-                                <DataGridTemplateColumn Header="Количество ВС данного типа" ClipboardContentBinding="{Binding Count}" SortMemberPath="Count">
+                                <DataGridTextColumn Header="Название ВС" Binding="{Binding Name}" />
+                                <DataGridTemplateColumn Header="Количество ВС данного типа"
+                                                        ClipboardContentBinding="{Binding Count}"
+                                                        SortMemberPath="Count">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate DataType="local1:Airplane">
-                                            <xctk:IntegerUpDown Minimum="0" Value="{Binding Count}"/>
+                                            <xctk:IntegerUpDown Minimum="0" Value="{Binding Count}" />
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTemplateColumn Header="Средний расход топлива (л/час)" ClipboardContentBinding="{Binding Cost}" SortMemberPath="Cost">
+                                <DataGridTemplateColumn Header="Средний расход топлива (л/час)"
+                                                        ClipboardContentBinding="{Binding Cost}" SortMemberPath="Cost">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate DataType="local1:Airplane">
-                                            <xctk:DoubleUpDown Minimum="0" Value="{Binding Cost}"/>
+                                            <xctk:DoubleUpDown Minimum="0" Value="{Binding Cost}" />
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTemplateColumn Header="Количество пассажирских мест" ClipboardContentBinding="{Binding Capacity}" SortMemberPath="Capacity">
+                                <DataGridTemplateColumn Header="Количество пассажирских мест"
+                                                        ClipboardContentBinding="{Binding Capacity}"
+                                                        SortMemberPath="Capacity">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate DataType="local1:Airplane">
-                                            <xctk:IntegerUpDown Minimum="0" Value="{Binding Capacity}"/>
+                                            <xctk:IntegerUpDown Minimum="0" Value="{Binding Capacity}" />
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
                             </DataGrid.Columns>
                         </DataGrid>
+                        <GroupBox Margin="10,0,10,120" Header="Время обслуживания ВС" Height="196"
+                                  VerticalAlignment="Bottom">
+                            <ListBox DataContext="{StaticResource AirplaneViewSource}" ItemsSource="{Binding}">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate DataType="local1:Airplane">
+                                        <Expander Header="{Binding Name}">
+                                            <DataGrid AutoGenerateColumns="False" CanUserAddRows="False"
+                                                      ItemsSource="{Binding TurnTimes}"
+                                                      LoadingRow="Datagrid_LoadingRow" EnableRowVirtualization="True"
+                                                      RowDetailsVisibilityMode="VisibleWhenSelected"
+                                                      IsSynchronizedWithCurrentItem="False">
+                                                <DataGrid.Columns>
+                                                    <DataGridTextColumn Header="Аэропорт"
+                                                                        Binding="{Binding Airport.Name}" />
+                                                    <DataGridTemplateColumn Header="Время обсуживания"
+                                                                            SortMemberPath="Time"
+                                                                            ClipboardContentBinding="{Binding Time}">
+                                                        <DataGridTemplateColumn.CellTemplate>
+                                                            <DataTemplate DataType="local1:TurnTime">
+                                                                <xctk:TimePicker Format="LongTime"
+                                                                                 Value="{Binding Time, Converter={StaticResource MyTimeConveter}}" />
+                                                            </DataTemplate>
+                                                        </DataGridTemplateColumn.CellTemplate>
+                                                    </DataGridTemplateColumn>
+                                                </DataGrid.Columns>
+                                            </DataGrid>
+                                        </Expander>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </GroupBox>
                         <GroupBox Header="Загрузка и удаление" Margin="10,0,0,70" Height="45"
                                   VerticalAlignment="Bottom">
                             <StackPanel Orientation="Horizontal">
@@ -119,19 +160,19 @@
                             <StackPanel Orientation="Horizontal" DataContext="{StaticResource AirplaneAdd}">
                                 <StackPanel Margin="10,0,0,0">
                                     <TextBlock Text="Название ВС" />
-                                    <TextBox Text="{Binding Name}"/>
+                                    <TextBox Text="{Binding Name}" />
                                 </StackPanel>
                                 <StackPanel Margin="10,0,0,0">
                                     <TextBlock Text="Количество ВС данного типа" />
-                                    <xctk:IntegerUpDown Minimum="0" Value="{Binding Count}"/>
+                                    <xctk:IntegerUpDown Minimum="0" Value="{Binding Count}" />
                                 </StackPanel>
                                 <StackPanel Margin="10,0,0,0">
                                     <TextBlock Text="Средний расход топлива (л/час)" />
-                                    <xctk:DoubleUpDown Minimum="0" Value="{Binding Cost}"/>
+                                    <xctk:DoubleUpDown Minimum="0" Value="{Binding Cost}" />
                                 </StackPanel>
                                 <StackPanel Margin="10,0,0,0">
                                     <TextBlock Text="Количество пассажирских мест" />
-                                    <xctk:DoubleUpDown Minimum="0" Value="{Binding Capacity}"/>
+                                    <xctk:DoubleUpDown Minimum="0" Value="{Binding Capacity}" />
                                 </StackPanel>
                                 <Button Height="18" Margin="10,15,0,0" Content="Добавить тип ВС"
                                         x:Name="ButtonAirplaneAdd" Click="ButtonAirplaneAdd_Click" />
@@ -143,12 +184,13 @@
                     <Grid>
                         <DataGrid x:Name="DatagridFlight" DataContext="{StaticResource FlightViewSource}"
                                   ItemsSource="{Binding}"
-                                  Margin="0,0,0,312" AutoGenerateColumns="False" CanUserAddRows="False"
+                                  Margin="0,0,0,130" AutoGenerateColumns="False" CanUserAddRows="False"
                                   LoadingRow="Datagrid_LoadingRow" EnableRowVirtualization="True"
                                   RowDetailsVisibilityMode="VisibleWhenSelected" IsSynchronizedWithCurrentItem="False">
                             <DataGrid.Columns>
 
-                                <DataGridTemplateColumn Header="Номер рейса" ClipboardContentBinding="{Binding Num}" SortMemberPath="Num">
+                                <DataGridTemplateColumn Header="Номер рейса" ClipboardContentBinding="{Binding Num}"
+                                                        SortMemberPath="Num">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate DataType="local1:Flight">
                                             <xctk:IntegerUpDown Minimum="1"
@@ -157,7 +199,9 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
 
-                                <DataGridTemplateColumn Header="Аэропорт отправления" ClipboardContentBinding="{Binding From.Name}" SortMemberPath="From.Name">
+                                <DataGridTemplateColumn Header="Аэропорт отправления"
+                                                        ClipboardContentBinding="{Binding From.Name}"
+                                                        SortMemberPath="From.Name">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate DataType="local1:Flight">
                                             <ComboBox
@@ -176,7 +220,9 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
 
-                                <DataGridTemplateColumn Header="Время отправления" ClipboardContentBinding="{Binding StartTime}" SortMemberPath="StartTime">
+                                <DataGridTemplateColumn Header="Время отправления"
+                                                        ClipboardContentBinding="{Binding StartTime}"
+                                                        SortMemberPath="StartTime">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate DataType="local1:Flight">
                                             <xctk:DateTimePicker>
@@ -193,7 +239,9 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
 
-                                <DataGridTemplateColumn Header="Аэропорт прибытия" ClipboardContentBinding="{Binding To.Name}" SortMemberPath="To.Name">
+                                <DataGridTemplateColumn Header="Аэропорт прибытия"
+                                                        ClipboardContentBinding="{Binding To.Name}"
+                                                        SortMemberPath="To.Name">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate DataType="local1:Flight">
                                             <ComboBox
@@ -212,7 +260,9 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
 
-                                <DataGridTemplateColumn Header="Время прибытия" ClipboardContentBinding="{Binding EndTime}" SortMemberPath="EndTime">
+                                <DataGridTemplateColumn Header="Время прибытия"
+                                                        ClipboardContentBinding="{Binding EndTime}"
+                                                        SortMemberPath="EndTime">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate DataType="local1:Flight">
                                             <xctk:DateTimePicker>
@@ -230,7 +280,9 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
 
-                                <DataGridTemplateColumn Header="Ожидаемый спрос" ClipboardContentBinding="{Binding Demand}" SortMemberPath="Demand">
+                                <DataGridTemplateColumn Header="Ожидаемый спрос"
+                                                        ClipboardContentBinding="{Binding Demand}"
+                                                        SortMemberPath="Demand">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate DataType="local1:Flight">
                                             <xctk:DoubleUpDown Minimum="0"
@@ -239,7 +291,9 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
 
-                                <DataGridTemplateColumn Header="Стоимость билета(руб)" ClipboardContentBinding="{Binding Price}" SortMemberPath="Price">
+                                <DataGridTemplateColumn Header="Стоимость билета(руб)"
+                                                        ClipboardContentBinding="{Binding Price}"
+                                                        SortMemberPath="Price">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate DataType="local1:Flight">
                                             <xctk:DoubleUpDown Minimum="0"
@@ -351,22 +405,88 @@
 
                             </StackPanel>
                         </GroupBox>
-                        <GroupBox Header="Время обслуживания ВС перед вылетом" Margin="10,0,10,130" Height="177" VerticalAlignment="Bottom">
-                            <ListView>
-                                <ListView.ItemTemplate>
-                                    <DataTemplate DataType="local1:Airplane">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="{Binding Name}"/>
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </ListView.ItemTemplate>
-                            </ListView>
-                        </GroupBox>
-
                     </Grid>
                 </TabItem>
-                <TabItem Header="Время обслуживания ВС">
-                    
+                <TabItem Header="Список членов экипажей">
+                    <Grid>
+                        <GroupBox Margin="10,10,10,120" Header="Список членов эпипажей и допуски к управлению ВС">
+                            <ListBox SelectionMode="Extended" x:Name="ListBoxCrewmember" DataContext="{StaticResource CrewmemberViewSource}" ItemsSource="{Binding}">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate DataType="local1:Crewmember">
+                                        <Expander>
+                                            <Expander.Header>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="{Binding SecondName}" />
+                                                    <TextBlock Text="{Binding FirstName}" Margin="2,0,0,0" />
+                                                    <TextBlock Text="{Binding LastName}" Margin="2,0,0,0" />
+                                                </StackPanel>
+                                            </Expander.Header>
+                                            <StackPanel>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Width="60" Text="Фамилия" />
+                                                    <TextBox Width="150" Text="{Binding SecondName}" />
+                                                </StackPanel>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Width="60" Text="Имя" />
+                                                    <TextBox Width="150" Text="{Binding FirstName}" />
+                                                </StackPanel>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Width="60" Text="Отчество" />
+                                                    <TextBox Width="150" Text="{Binding LastName}" />
+                                                </StackPanel>
+                                                <TextBlock Text="Допуски к управлению различными типами ВС:" Margin="0,20,0,5"/>
+                                                <DataGrid AutoGenerateColumns="False" CanUserAddRows="False"
+                                                          ItemsSource="{Binding Permissions}"
+                                                          LoadingRow="Datagrid_LoadingRow"
+                                                          EnableRowVirtualization="True"
+                                                          RowDetailsVisibilityMode="VisibleWhenSelected"
+                                                          IsSynchronizedWithCurrentItem="False">
+                                                    <DataGrid.Columns>
+                                                        <DataGridTextColumn Header="Тип ВС" Binding="{Binding Airplane.Name}"/>
+                                                        <DataGridCheckBoxColumn Header="Допуск - первый пилот" Binding="{Binding FirstPilot}"/>
+                                                        <DataGridCheckBoxColumn Header="Допуск - второй пилот" Binding="{Binding SecondPilot}"/>
+                                                    </DataGrid.Columns>
+                                                </DataGrid>
+                                            </StackPanel>
+                                        </Expander>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </GroupBox>
+                        <GroupBox Header="Загрузка и удаление" Margin="10,0,0,70" Height="45"
+                                  VerticalAlignment="Bottom">
+                            <StackPanel Orientation="Horizontal">
+                                <Button x:Name="ButtonAirplaneLoad2" Content="Загрузить из файла"
+                                        Click="ButtonAirplaneLoad_Click" Width="124" Height="18" Margin="10,0,0,0" />
+                                <Button x:Name="ButtonCrewMemberDelete2" Content="Удалить выбранные типы ВС"
+                                        IsEnabled="{Binding ElementName=ListBoxCrewmember,Path=SelectedItem,
+                            Converter={StaticResource MySelectedConverter}}"
+                                        Click="ButtonAirplaneDelete_Click" Height="18" Margin="8,0,0,0" />
+                            </StackPanel>
+                        </GroupBox>
+                        <GroupBox Header="Добавление" Margin="10,0,0,10" Height="60" VerticalAlignment="Bottom">
+                            <StackPanel Orientation="Horizontal" DataContext="{StaticResource AirplaneAdd}">
+                                <StackPanel Margin="10,0,0,0">
+                                    <TextBlock Text="Название ВС" />
+                                    <TextBox Text="{Binding Name}" />
+                                </StackPanel>
+                                <StackPanel Margin="10,0,0,0">
+                                    <TextBlock Text="Количество ВС данного типа" />
+                                    <xctk:IntegerUpDown Minimum="0" Value="{Binding Count}" />
+                                </StackPanel>
+                                <StackPanel Margin="10,0,0,0">
+                                    <TextBlock Text="Средний расход топлива (л/час)" />
+                                    <xctk:DoubleUpDown Minimum="0" Value="{Binding Cost}" />
+                                </StackPanel>
+                                <StackPanel Margin="10,0,0,0">
+                                    <TextBlock Text="Количество пассажирских мест" />
+                                    <xctk:DoubleUpDown Minimum="0" Value="{Binding Capacity}" />
+                                </StackPanel>
+                                <Button Height="18" Margin="10,15,0,0" Content="Добавить тип ВС"
+                                        x:Name="ButtonAirplaneAdd2" Click="ButtonAirplaneAdd_Click" />
+                            </StackPanel>
+                        </GroupBox>
+                    </Grid>
                 </TabItem>
                 <TabItem Header="TabItem">
                     <Grid Background="#FFCD7F7F">

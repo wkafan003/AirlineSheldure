@@ -58,9 +58,9 @@ namespace AirlineSheldure
             //_db.Flights.RemoveRange(_db.Flights);
             //_db.SaveChanges();
 
-            AirlineRostering();
-            _db.SaveChanges();
-            CrewRostering();
+            //AirlineRostering();
+            //_db.SaveChanges();
+            //CrewRostering();
             _db.SaveChanges();
 
             Console.WriteLine();
@@ -167,8 +167,9 @@ namespace AirlineSheldure
                 for (int i = 0; i < crewCounts[j]; i++)
                 {
                     Crewmember pilot = new Crewmember()
-                        {BaseId = airports[j].Id, FirstName = $"Иван {i}_{j}", LastName = "Иванов"};
+                        {BaseId = airports[j].Id, FirstName = $"Иван {i}_{j}", SecondName="Иванов", LastName = "Иванович"};
                     Roster r = new Roster();
+                    r.Actions.Add(new Model.Action() { ActionTypeId = (int)ActionEnum.Holiday, StartTime = DateTime.Now, EndTime = DateTime.Now.AddDays(1)});
                     pilot.Roster = r;
                     for (int k = 0; k < airplanes.Length; k++)
                     {
@@ -420,7 +421,7 @@ namespace AirlineSheldure
                     {
                         StartTime = pair.CrewmemberDuties[i].Flights[j].StartTime,
                         EndTime = pair.CrewmemberDuties[i].Flights[j].EndTime,
-                        ActionTypeId = isFirstPilot ? (int) ActionEnum.FlyFirst : (int) ActionEnum.FliSecond,
+                        ActionTypeId = isFirstPilot ? (int) ActionEnum.FlyFirst : (int) ActionEnum.FlySecond,
                         Description =
                             $"{pair.CrewmemberDuties[i].Flights[j].From.Name}-{pair.CrewmemberDuties[i].Flights[j].To.Name} "
                     };
@@ -943,6 +944,8 @@ namespace AirlineSheldure
                 ((CollectionViewSource) (this.FindResource("AirplaneViewSource")));
             CollectionViewSource airoportViewSource =
                 ((CollectionViewSource) (this.FindResource("AiroportViewSource")));
+            CollectionViewSource crewmemberViewSource =
+                ((CollectionViewSource) (this.FindResource("CrewmemberViewSource")));
             Flight add = (Flight) FindResource("FlightAdd");
             // Load is an extension method on IQueryable,
             // defined in the System.Data.Entity namespace.
@@ -957,6 +960,7 @@ namespace AirlineSheldure
             _db.Airplanes.Load();
             _db.Flights.Load();
             _db.Airports.Load();
+            _db.TurnTimes.Load();
             _db.Crewmembers.Include(i => i.Permissions).Include(c => c.Roster).ThenInclude(r => r.Actions).Load();
             _db.AirplanePairs.Load();
 
@@ -966,6 +970,7 @@ namespace AirlineSheldure
             flightViewSource.Source = _db.Flights.Local.ToObservableCollection();
             airplaneViewSource.Source = _db.Airplanes.Local.ToObservableCollection();
             airoportViewSource.Source = _db.Airports.Local.ToObservableCollection();
+            crewmemberViewSource.Source = _db.Crewmembers.Local.ToObservableCollection();
         }
 
         private void ButtonFlightDelete_Click(object sender, RoutedEventArgs e)
@@ -1060,6 +1065,7 @@ namespace AirlineSheldure
                 if (op.ShowDialog() == true)
                 {
                     List<Flight> flights = new List<Flight>();
+
                     string[][] source = File.ReadAllLines(op.FileName).Where(s => !s.StartsWith("#"))
                         .Select(s => s.Split()).ToArray();
                     foreach (var s in source)
@@ -1149,6 +1155,9 @@ namespace AirlineSheldure
                 if (op.ShowDialog() == true)
                 {
                     List<Airport> airports = new List<Airport>();
+                    List<TurnTime> times = new List<TurnTime>();
+                    var airplanes = _db.Airplanes;
+                    Airport newAirport;
                     string[][] source = File.ReadAllLines(op.FileName).Where(s => !s.StartsWith("#"))
                         .Select(s => s.Split()).ToArray();
                     foreach (var s in source)
@@ -1159,15 +1168,22 @@ namespace AirlineSheldure
                             return;
                         }
                         string fullname = s[1].Trim('"');
-                        airports.Add(new Airport()
+                        newAirport = new Airport()
                         {
-                            Name=name,
-                            Fullname=fullname,
-                        });
+                            Name = name,
+                            Fullname = fullname,
+                        };
+                        airports.Add(newAirport);
+                        foreach (var airplane in airplanes)
+                        {
+                            times.Add(new TurnTime() { Airport = newAirport, Airplane = airplane, Time = TimeSpan.Zero });
+                        }
                     }
 
                     _db.Airports.RemoveRange(_db.Airports);
                     _db.Airports.AddRange(airports.OrderBy(i=>i.Name));
+                    _db.TurnTimes.RemoveRange(_db.TurnTimes);
+                    _db.TurnTimes.AddRange(times);
                     _db.SaveChanges();
                 }
             }
@@ -1238,26 +1254,46 @@ namespace AirlineSheldure
             {
                 if (op.ShowDialog() == true)
                 {
+                    List<TurnTime> times = new List<TurnTime>();
+                    List<Permission> permissions = new List<Permission>();
+                    var crews = _db.Crewmembers;
+                    var airports = _db.Airports;
                     List<Airplane> airplanes = new List<Airplane>();
                     string[][] source = File.ReadAllLines(op.FileName).Where(s => !s.StartsWith("#"))
                         .Select(s => s.Split()).ToArray();
+                    Airplane newAirplane;
                     foreach (var s in source)
                     {
                         string name = s[0];
                         int count = int.Parse(s[1]);
                         double cost = int.Parse(s[2]);
                         int capacity = int.Parse(s[3]);
-                        airplanes.Add(new Airplane()
+                        newAirplane = new Airplane()
                         {
                             Name = name,
-                            Count=count,
-                            Cost=cost,
-                            Capacity=capacity,
-                        });
+                            Count = count,
+                            Cost = cost,
+                            Capacity = capacity,
+                        };
+                        airplanes.Add(newAirplane);
+                        foreach (var airport in airports)
+                        {
+                            times.Add(new TurnTime() { Airport = airport, Airplane = newAirplane, Time = TimeSpan.Zero });
+                        }
+                        foreach (var crewmember in crews)
+                        {
+                            permissions.Add(new Permission() { Airplane = newAirplane, Crewmember = crewmember, FirstPilot = false, SecondPilot = false });
+                        }
                     }
+                    
 
+					
                     _db.Airplanes.RemoveRange(_db.Airplanes);
                     _db.Airplanes.AddRange(airplanes);
+                    _db.TurnTimes.RemoveRange(_db.TurnTimes);
+                    _db.TurnTimes.AddRange(times);
+                    _db.Permissions.RemoveRange(_db.Permissions);
+                    _db.Permissions.AddRange(permissions);
                     _db.SaveChanges();
                 }
             }
