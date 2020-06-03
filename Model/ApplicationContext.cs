@@ -154,9 +154,9 @@ namespace Model
             });
             modelBuilder.Entity<ActionType>().HasData(new ActionType[]
             {
-                new ActionType() {Id = -7, Type = "Другая причина отсутствия"},
+                new ActionType() {Id = -7, Type = "Другое"},
                 new ActionType() {Id = -6, Type = "Отпуск"},
-                new ActionType() {Id = -5, Type = "Ожидание в гостинице"},
+                new ActionType() {Id = -5, Type = "Отдых в гостинице"},
                 new ActionType() {Id = -4, Type = "Ожидание нового рейса"},
                 new ActionType() {Id = -3, Type = "Занятие на тренажере"},
                 new ActionType() {Id = -2, Type = "Полет первым пилотом"},
@@ -1243,8 +1243,9 @@ namespace Model
     /// <summary>
     /// Конкретное действие члена экипажа, с указанием типа, даты начала и даты окончания
     /// </summary>
-    public class Action : INotifyPropertyChanged
+    public class Action : INotifyPropertyChanged,IDataErrorInfo
     {
+        private readonly ActionValidator _validator;
         private int _id;
         private string _description;
         private int _actionTypeId;
@@ -1318,12 +1319,47 @@ namespace Model
             }
         }
 
+        public Action()
+        {
+            _validator = new ActionValidator();
+        }
         public event PropertyChangedEventHandler PropertyChanged;
 
         public void OnPropertyChanged([CallerMemberName] string prop = "")
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
         }
+        public string this[string columnName]
+        {
+            get
+            {
+                var firstOrDefault = _validator.Validate(this).Errors.FirstOrDefault(lol => lol.PropertyName == columnName);
+                OnPropertyChanged("IsValid");
+                if (firstOrDefault != null)
+                    return _validator != null ? firstOrDefault.ErrorMessage : "";
+                return "";
+            }
+        }
+        [NotMapped]
+        public string Error
+        {
+            get
+            {
+                if (_validator != null)
+                {
+                    var results = _validator.Validate(this);
+                    if (results != null && results.Errors.Any())
+                    {
+                        var errors = string.Join(Environment.NewLine, results.Errors.Select(x => x.ErrorMessage).ToArray());
+                        return errors;
+                    }
+                }
+                return string.Empty;
+            }
+        }
+
+        [NotMapped]
+        public bool IsValid => _validator.Validate(this).Errors.Count == 0;
     }
 
     /// <summary>

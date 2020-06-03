@@ -7,7 +7,7 @@
         xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
         xmlns:system="clr-namespace:System;assembly=System.Runtime"
         mc:Ignorable="d"
-        Title="MainWindow" Height="750" Width="1250" Loaded="MainWindow_OnLoaded">
+        Title="Планирование рейсов и экипажей для них" Height="750" Width="1270" Loaded="MainWindow_OnLoaded">
     <Window.Resources>
         <CollectionViewSource x:Key="FlightViewSource" Source="{x:Null}"
                               d:DesignSource="{d:DesignInstance {x:Type local1:Flight}, CreateList=True}" />
@@ -17,6 +17,9 @@
                               d:DesignSource="{d:DesignInstance {x:Type local1:Airport}, CreateList=True}" />
         <CollectionViewSource x:Key="CrewmemberViewSource" Source="{x:Null}"
                               d:DesignSource="{d:DesignInstance {x:Type local1:Crewmember}, CreateList=True}" />
+        <CollectionViewSource x:Key="ActionTypesViewSource" Source="{x:Null}"
+                              d:DesignSource="{d:DesignInstance {x:Type local1:Action}, CreateList=True}" />
+
         <local:IsSelectedConverter x:Key="MySelectedConverter" />
         <local:DateTimeToTimeSpanConverter x:Key="MyTimeConveter" />
         <local1:Flight x:Key="FlightAdd" StartTime="{x:Static local:DateTimeHelper.Today}"
@@ -180,6 +183,142 @@
                         </GroupBox>
                     </Grid>
                 </TabItem>
+                <TabItem Header="Парк воздушных судов2">
+                    <Grid>
+
+                        <GroupBox Margin="10,10,10,120" Header="Парк воздушных судов">
+                            <TabControl Margin="0,10,0,0" x:Name="TabControlAirplane"
+                                        DataContext="{StaticResource AirplaneViewSource}" ItemsSource="{Binding}"
+                                        TabStripPlacement="Left">
+                                <TabControl.Template>
+                                    <ControlTemplate TargetType="TabControl">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition />
+                                            </Grid.ColumnDefinitions>
+                                            <ScrollViewer
+                                                HorizontalScrollBarVisibility="Disabled"
+                                                VerticalScrollBarVisibility="Auto"
+                                                FlowDirection="RightToLeft">
+                                                <TabPanel
+                                                    x:Name="HeaderPanel"
+                                                    Panel.ZIndex="0"
+                                                    KeyboardNavigation.TabIndex="1"
+                                                    IsItemsHost="true" />
+                                            </ScrollViewer>
+                                            <ContentPresenter
+                                                x:Name="PART_SelectedContentHost"
+                                                SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
+                                                ContentSource="SelectedContent" Grid.Column="1" />
+                                        </Grid>
+                                    </ControlTemplate>
+                                </TabControl.Template>
+                                <TabControl.ItemTemplate>
+                                    <DataTemplate DataType="local1:Airplane">
+                                        <TextBlock MinWidth="100" Text="{Binding Name}" TextAlignment="Center" />
+                                    </DataTemplate>
+                                </TabControl.ItemTemplate>
+                                <TabControl.ContentTemplate>
+                                    <DataTemplate DataType="local1:Airplane">
+                                        <ScrollViewer Margin="10,0,0,0" VerticalScrollBarVisibility="Auto"
+                                                      HorizontalScrollBarVisibility="Auto">
+                                            <Grid>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="120" />
+                                                    <RowDefinition Height="1*" />
+                                                </Grid.RowDefinitions>
+                                                <GroupBox Header="Характеристики ВС" Margin="0,10,0,0" Grid.Row="0">
+                                                    <StackPanel Orientation="Vertical">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <TextBlock Width="200" Text="Название ВС" />
+                                                            <TextBox Width="100" TextAlignment="Center"
+                                                                     Text="{Binding Name,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}" />
+                                                        </StackPanel>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <TextBlock Width="200" Text="Количество ВС данного типа" />
+                                                            <xctk:IntegerUpDown Minimum="0" Width="100"
+                                                                                Text="{Binding Count,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}" />
+                                                        </StackPanel>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <TextBlock Width="200"
+                                                                       Text="Средний расход топлива (л/час)" />
+                                                            <xctk:DoubleUpDown Minimum="0" Width="100"
+                                                                               Text="{Binding Cost,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}" />
+                                                        </StackPanel>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <TextBlock Width="200" Text="Количество пассажирских мест" />
+                                                            <xctk:IntegerUpDown Minimum="0" Width="100"
+                                                                                Text="{Binding Capacity,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}" />
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                </GroupBox>
+
+                                                <GroupBox Header="Время обслуживания ВС:"
+                                                          Grid.Row="1">
+                                                    <DataGrid AutoGenerateColumns="False" CanUserAddRows="False"
+                                                              ItemsSource="{Binding TurnTimes}"
+                                                              LoadingRow="Datagrid_LoadingRow"
+                                                              EnableRowVirtualization="True"
+                                                              RowDetailsVisibilityMode="VisibleWhenSelected"
+                                                              IsSynchronizedWithCurrentItem="False">
+                                                        <DataGrid.Columns>
+                                                            <DataGridTextColumn Header="Аэропорт"
+                                                                                Binding="{Binding Airport.Name,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}" />
+                                                            <DataGridTemplateColumn Header="Время обсуживания">
+                                                                <DataGridTemplateColumn.CellTemplate>
+                                                                    <DataTemplate DataType="local1:TurnTime">
+                                                                        <xctk:TimePicker Format="LongTime"
+                                                                                         Value="{Binding Time,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged,Converter={StaticResource MyTimeConveter}}" />
+                                                                    </DataTemplate>
+                                                                </DataGridTemplateColumn.CellTemplate>
+                                                            </DataGridTemplateColumn>
+                                                        </DataGrid.Columns>
+                                                    </DataGrid>
+                                                </GroupBox>
+                                            </Grid>
+                                        </ScrollViewer>
+                                    </DataTemplate>
+                                </TabControl.ContentTemplate>
+                            </TabControl>
+                        </GroupBox>
+
+
+                        <GroupBox Header="Загрузка и удаление" Margin="10,0,0,70" Height="45"
+                                  VerticalAlignment="Bottom">
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="Загрузить из файла"
+                                        Click="ButtonAirplaneLoad_Click" Width="124" Height="18" Margin="10,0,0,0" />
+                                <Button Content="Удалить запись об ВС"
+                                        IsEnabled="{Binding ElementName=TabControlAirplane,Path=SelectedItem,
+                            Converter={StaticResource MySelectedConverter}}"
+                                        Click="ButtonAirplaneDelete_Click" Height="18" Margin="8,0,0,0" />
+                            </StackPanel>
+                        </GroupBox>
+                        <GroupBox Header="Добавление" Margin="10,0,0,10" Height="60" VerticalAlignment="Bottom">
+                            <StackPanel Orientation="Horizontal" DataContext="{StaticResource AirplaneAdd}">
+                                <StackPanel Margin="10,0,0,0">
+                                    <TextBlock Text="Название ВС" />
+                                    <TextBox Text="{Binding Name}" />
+                                </StackPanel>
+                                <StackPanel Margin="10,0,0,0">
+                                    <TextBlock Text="Количество ВС данного типа" />
+                                    <xctk:IntegerUpDown Minimum="0" Value="{Binding Count}" />
+                                </StackPanel>
+                                <StackPanel Margin="10,0,0,0">
+                                    <TextBlock Text="Средний расход топлива (л/час)" />
+                                    <xctk:DoubleUpDown Minimum="0" Value="{Binding Cost}" />
+                                </StackPanel>
+                                <StackPanel Margin="10,0,0,0">
+                                    <TextBlock Text="Количество пассажирских мест" />
+                                    <xctk:DoubleUpDown Minimum="0" Value="{Binding Capacity}" />
+                                </StackPanel>
+                                <Button Height="18" Margin="10,15,0,0" Content="Добавить тип ВС"
+                                        x:Name="ButtonAirplaneAdd23" Click="ButtonAirplaneAdd_Click" />
+                            </StackPanel>
+                        </GroupBox>
+                    </Grid>
+                </TabItem>
                 <TabItem Header="Список рейсов">
                     <Grid>
                         <DataGrid x:Name="DatagridFlight" DataContext="{StaticResource FlightViewSource}"
@@ -301,7 +440,16 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-
+                                <DataGridTemplateColumn Header="Назначенный тип ВС" SortMemberPath="Airplane.Name"
+                                                        ClipboardContentBinding="{Binding Airplane.Name}">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate DataType="local1:Flight">
+                                            <TextBlock
+                                                DataContext="{Binding Airplane, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
                             </DataGrid.Columns>
                         </DataGrid>
 
@@ -409,87 +557,261 @@
                 </TabItem>
                 <TabItem Header="Список членов экипажей">
                     <Grid>
-                        <GroupBox Margin="10,10,10,120" Header="Список членов эпипажей и допуски к управлению ВС">
-                            <ListBox SelectionMode="Extended" x:Name="ListBoxCrewmember" DataContext="{StaticResource CrewmemberViewSource}" ItemsSource="{Binding}">
-                                <ListBox.ItemTemplate>
+                        <GroupBox Margin="10,10,10,130" Header="Список членов эпипажей и допуски к управлению ВС">
+                            <TabControl Margin="0,10,0,0" x:Name="TabControlCrewmember"
+                                        DataContext="{StaticResource CrewmemberViewSource}" ItemsSource="{Binding}"
+                                        TabStripPlacement="Left">
+                                <TabControl.Template>
+                                    <ControlTemplate TargetType="TabControl">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition />
+                                            </Grid.ColumnDefinitions>
+                                            <ScrollViewer
+                                                HorizontalScrollBarVisibility="Disabled"
+                                                VerticalScrollBarVisibility="Auto"
+                                                FlowDirection="RightToLeft">
+                                                <TabPanel
+                                                    x:Name="HeaderPanel"
+                                                    Panel.ZIndex="0"
+                                                    KeyboardNavigation.TabIndex="1"
+                                                    IsItemsHost="true" />
+                                            </ScrollViewer>
+                                            <ContentPresenter
+                                                x:Name="PART_SelectedContentHost"
+                                                SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
+                                                ContentSource="SelectedContent" Grid.Column="1" />
+                                        </Grid>
+                                    </ControlTemplate>
+                                </TabControl.Template>
+                                <TabControl.ItemTemplate>
                                     <DataTemplate DataType="local1:Crewmember">
-                                        <Expander>
-                                            <Expander.Header>
-                                                <StackPanel Orientation="Horizontal">
-                                                    <TextBlock Text="{Binding SecondName}" />
-                                                    <TextBlock Text="{Binding FirstName}" Margin="2,0,0,0" />
-                                                    <TextBlock Text="{Binding LastName}" Margin="2,0,0,0" />
-                                                </StackPanel>
-                                            </Expander.Header>
-                                            <StackPanel>
-                                                <StackPanel Orientation="Horizontal">
-                                                    <TextBlock Width="60" Text="Фамилия" />
-                                                    <TextBox Width="150" Text="{Binding SecondName}" />
-                                                </StackPanel>
-                                                <StackPanel Orientation="Horizontal">
-                                                    <TextBlock Width="60" Text="Имя" />
-                                                    <TextBox Width="150" Text="{Binding FirstName}" />
-                                                </StackPanel>
-                                                <StackPanel Orientation="Horizontal">
-                                                    <TextBlock Width="60" Text="Отчество" />
-                                                    <TextBox Width="150" Text="{Binding LastName}" />
-                                                </StackPanel>
-                                                <TextBlock Text="Допуски к управлению различными типами ВС:" Margin="0,20,0,5"/>
-                                                <DataGrid AutoGenerateColumns="False" CanUserAddRows="False"
-                                                          ItemsSource="{Binding Permissions}"
-                                                          LoadingRow="Datagrid_LoadingRow"
-                                                          EnableRowVirtualization="True"
-                                                          RowDetailsVisibilityMode="VisibleWhenSelected"
-                                                          IsSynchronizedWithCurrentItem="False">
-                                                    <DataGrid.Columns>
-                                                        <DataGridTextColumn Header="Тип ВС" Binding="{Binding Airplane.Name}"/>
-                                                        <DataGridCheckBoxColumn Header="Допуск - первый пилот" Binding="{Binding FirstPilot}"/>
-                                                        <DataGridCheckBoxColumn Header="Допуск - второй пилот" Binding="{Binding SecondPilot}"/>
-                                                    </DataGrid.Columns>
-                                                </DataGrid>
-                                            </StackPanel>
-                                        </Expander>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock
+                                                Text="{Binding LastName,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}" />
+                                            <TextBlock
+                                                Text="{Binding FirstName,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
+                                                Margin="2,0,0,0" />
+                                            <TextBlock
+                                                Text="{Binding SecondName,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
+                                                Margin="2,0,0,0" />
+                                        </StackPanel>
                                     </DataTemplate>
-                                </ListBox.ItemTemplate>
-                            </ListBox>
+                                </TabControl.ItemTemplate>
+                                <TabControl.ContentTemplate>
+                                    <DataTemplate DataType="local1:Crewmember">
+                                        <ScrollViewer Margin="10,0,0,0" VerticalScrollBarVisibility="Auto"
+                                                      HorizontalScrollBarVisibility="Auto">
+                                            <Grid>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="90" />
+                                                    <RowDefinition Height="1*" />
+                                                    <RowDefinition Height="1*" />
+                                                </Grid.RowDefinitions>
+                                                <StackPanel Margin="0,10,0,0" Orientation="Vertical" Grid.Row="0">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Width="120" Text="Фамилия" />
+                                                        <TextBox Width="150"
+                                                                 Text="{Binding SecondName,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}" />
+                                                    </StackPanel>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Width="120" Text="Имя" />
+                                                        <TextBox Width="150"
+                                                                 Text="{Binding FirstName,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}" />
+                                                    </StackPanel>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Width="120" Text="Отчество" />
+                                                        <TextBox Width="150"
+                                                                 Text="{Binding LastName,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}" />
+                                                    </StackPanel>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Width="120" Text="Базовый аэропорт" />
+                                                        <ComboBox
+                                                            Loaded="ComboBoxFlight_Loaded" DisplayMemberPath="Name"
+                                                            SelectedValuePath="Id" IsTextSearchEnabled="True"
+                                                            IsEditable="True"
+                                                            SelectedValue="{Binding Path=BaseId, Mode=TwoWay
+                                                             ,UpdateSourceTrigger=PropertyChanged}" />
+                                                    </StackPanel>
+                                                </StackPanel>
+                                                <GroupBox Header="Допуски к управлению различными типами ВС:"
+                                                          Grid.Row="1">
+                                                    <DataGrid AutoGenerateColumns="False" CanUserAddRows="False"
+                                                              ItemsSource="{Binding Permissions}"
+                                                              LoadingRow="Datagrid_LoadingRow"
+                                                              EnableRowVirtualization="True"
+                                                              RowDetailsVisibilityMode="VisibleWhenSelected"
+                                                              IsSynchronizedWithCurrentItem="False">
+                                                        <DataGrid.Columns>
+                                                            <DataGridTextColumn Header="Тип ВС"
+                                                                                Binding="{Binding Airplane.Name,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}" />
+                                                            <DataGridCheckBoxColumn Header="Допуск - первый пилот"
+                                                                                    Binding="{Binding FirstPilot,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}" />
+                                                            <DataGridCheckBoxColumn Header="Допуск - второй пилот"
+                                                                                    Binding="{Binding SecondPilot,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}" />
+                                                        </DataGrid.Columns>
+                                                    </DataGrid>
+                                                </GroupBox>
+                                                <GroupBox Header="Личное расписание" Grid.Row="2">
+                                                    <StackPanel Orientation="Vertical">
+                                                        <Button Click="ButtonActionAdd_Click"
+                                                                Content="Добавить событие расписания" Width="180"
+                                                                HorizontalAlignment="Left" />
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <TextBlock Text="Общий налет" />
+                                                            <TextBlock Margin="10,0,0,0"
+                                                                       Text="{Binding Roster.FlyTime}" />
+                                                        </StackPanel>
+                                                        <DataGrid AutoGenerateColumns="False" CanUserAddRows="False"
+                                                                  ItemsSource="{Binding Roster.Actions}"
+                                                                  LoadingRow="Datagrid_LoadingRow"
+                                                                  EnableRowVirtualization="True"
+                                                                  RowDetailsVisibilityMode="VisibleWhenSelected"
+                                                                  IsSynchronizedWithCurrentItem="False">
+                                                            <DataGrid.Columns>
+                                                                <DataGridTemplateColumn Header="Тип события"
+                                                                                        SortMemberPath="ActionType.Type">
+                                                                    <DataGridTemplateColumn.CellTemplate>
+                                                                        <DataTemplate DataType="local1:Action">
+                                                                            <ComboBox Loaded="ComboBoxAction_Loaded"
+                                                                                      SelectedValuePath="Id"
+                                                                                      DisplayMemberPath="Type"
+                                                                                      SelectedValue="{Binding ActionTypeId,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
+                                                                                      IsTextSearchEnabled="True"
+                                                                                      IsEditable="True" />
+                                                                        </DataTemplate>
+                                                                    </DataGridTemplateColumn.CellTemplate>
+
+                                                                </DataGridTemplateColumn>
+                                                                <DataGridTextColumn Header="Полное описание события"
+                                                                                    Binding="{Binding Description,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}" />
+                                                                <DataGridTemplateColumn Header="Время начала"
+                                                                                        SortMemberPath="StartTime"
+                                                                                        ClipboardContentBinding="{Binding StartTime}">
+                                                                    <DataGridTemplateColumn.CellTemplate>
+                                                                        <DataTemplate DataType="local1:Action">
+                                                                            <xctk:DateTimePicker>
+                                                                                <xctk:DateTimePicker.Value>
+                                                                                    <Binding Path="StartTime"
+                                                                                             Mode="TwoWay"
+                                                                                             UpdateSourceTrigger="PropertyChanged">
+                                                                                        <Binding.ValidationRules>
+                                                                                            <DataErrorValidationRule />
+                                                                                        </Binding.ValidationRules>
+                                                                                    </Binding>
+                                                                                </xctk:DateTimePicker.Value>
+                                                                            </xctk:DateTimePicker>
+                                                                        </DataTemplate>
+                                                                    </DataGridTemplateColumn.CellTemplate>
+                                                                </DataGridTemplateColumn>
+                                                                <DataGridTemplateColumn Header="Время окончания"
+                                                                                        SortMemberPath="EndTime"
+                                                                                        ClipboardContentBinding="{Binding EndTime}">
+                                                                    <DataGridTemplateColumn.CellTemplate>
+                                                                        <DataTemplate DataType="local1:Action">
+                                                                            <xctk:DateTimePicker>
+                                                                                <xctk:DateTimePicker.Value>
+                                                                                    <Binding Path="EndTime"
+                                                                                             Mode="TwoWay"
+                                                                                             UpdateSourceTrigger="PropertyChanged">
+                                                                                        <Binding.ValidationRules>
+                                                                                            <DataErrorValidationRule />
+                                                                                        </Binding.ValidationRules>
+                                                                                    </Binding>
+                                                                                </xctk:DateTimePicker.Value>
+                                                                            </xctk:DateTimePicker>
+                                                                        </DataTemplate>
+                                                                    </DataGridTemplateColumn.CellTemplate>
+                                                                </DataGridTemplateColumn>
+                                                            </DataGrid.Columns>
+                                                        </DataGrid>
+
+                                                    </StackPanel>
+                                                </GroupBox>
+                                            </Grid>
+                                        </ScrollViewer>
+                                    </DataTemplate>
+                                </TabControl.ContentTemplate>
+                            </TabControl>
                         </GroupBox>
-                        <GroupBox Header="Загрузка и удаление" Margin="10,0,0,70" Height="45"
+                        <GroupBox Header="Загрузка и удаление" Margin="10,0,0,85" Height="45"
                                   VerticalAlignment="Bottom">
                             <StackPanel Orientation="Horizontal">
                                 <Button x:Name="ButtonAirplaneLoad2" Content="Загрузить из файла"
                                         Click="ButtonAirplaneLoad_Click" Width="124" Height="18" Margin="10,0,0,0" />
-                                <Button x:Name="ButtonCrewMemberDelete2" Content="Удалить выбранные типы ВС"
-                                        IsEnabled="{Binding ElementName=ListBoxCrewmember,Path=SelectedItem,
+                                <Button x:Name="ButtonCrewMemberDelete" Content="Удалить выбранного члена экипажа"
+                                        IsEnabled="{Binding ElementName=TabControlCrewmember,Path=SelectedItem,
                             Converter={StaticResource MySelectedConverter}}"
-                                        Click="ButtonAirplaneDelete_Click" Height="18" Margin="8,0,0,0" />
+                                        Click="ButtonCrewMemberDelete_Click" Height="18" Margin="8,0,0,0" />
                             </StackPanel>
                         </GroupBox>
-                        <GroupBox Header="Добавление" Margin="10,0,0,10" Height="60" VerticalAlignment="Bottom">
-                            <StackPanel Orientation="Horizontal" DataContext="{StaticResource AirplaneAdd}">
-                                <StackPanel Margin="10,0,0,0">
-                                    <TextBlock Text="Название ВС" />
-                                    <TextBox Text="{Binding Name}" />
+                        <GroupBox Header="Добавление" Margin="10,0,0,10" Height="70" VerticalAlignment="Bottom">
+                            <StackPanel Orientation="Horizontal" DataContext="{StaticResource CrewmemberAdd}">
+                                <StackPanel Width="150" Margin="10,0,0,0">
+                                    <TextBlock Text="Имя" />
+                                    <TextBox Text="{Binding FirstName}" />
                                 </StackPanel>
-                                <StackPanel Margin="10,0,0,0">
-                                    <TextBlock Text="Количество ВС данного типа" />
-                                    <xctk:IntegerUpDown Minimum="0" Value="{Binding Count}" />
+                                <StackPanel Width="150" Margin="10,0,0,0">
+                                    <TextBlock Text="Фамилия" />
+                                    <TextBox Text="{Binding SecondName}" />
                                 </StackPanel>
-                                <StackPanel Margin="10,0,0,0">
-                                    <TextBlock Text="Средний расход топлива (л/час)" />
-                                    <xctk:DoubleUpDown Minimum="0" Value="{Binding Cost}" />
+                                <StackPanel Width="150" Margin="10,0,0,0">
+                                    <TextBlock Text="Отчество" />
+                                    <TextBox Text="{Binding LastName}" />
                                 </StackPanel>
-                                <StackPanel Margin="10,0,0,0">
-                                    <TextBlock Text="Количество пассажирских мест" />
-                                    <xctk:DoubleUpDown Minimum="0" Value="{Binding Capacity}" />
+                                <StackPanel Width="150" Margin="10,0,0,0">
+                                    <TextBlock Text="Базовый аэропорт" />
+                                    <ComboBox x:Name="ComboboxCrewAdd"
+                                              Loaded="ComboBoxFlight_Loaded" DisplayMemberPath="Name"
+                                              DataContext="{StaticResource CrewmemberAdd}"
+                                              SelectedValuePath="Id" IsTextSearchEnabled="True" IsEditable="True"
+                                              SelectedValue="{Binding Path=BaseId, Mode=TwoWay
+                                                             ,UpdateSourceTrigger=PropertyChanged}">
+                                        <ComboBox.Style>
+                                            <Style TargetType="{x:Type ComboBox}">
+                                                <Style.Triggers>
+                                                    <DataTrigger
+                                                        Binding="{Binding Path=SelectedItem, 
+                                               ElementName=ComboboxCrewAdd}"
+                                                        Value="{x:Null}">
+                                                        <Setter Property="Foreground" Value="Red" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </ComboBox.Style>
+                                    </ComboBox>
                                 </StackPanel>
-                                <Button Height="18" Margin="10,15,0,0" Content="Добавить тип ВС"
-                                        x:Name="ButtonAirplaneAdd2" Click="ButtonAirplaneAdd_Click" />
+
+                                <Button Height="18" Margin="10,5,0,0" Content="Добавить члена экипажа"
+                                        Click="ButtonCrewmemberAdd_Click">
+                                    <Button.Style>
+                                        <Style TargetType="{x:Type Button}">
+                                            <Style.Triggers>
+                                                <DataTrigger
+                                                    Binding="{Binding Path=SelectedItem, 
+                                               ElementName=ComboboxCrewAdd}"
+                                                    Value="{x:Null}">
+                                                    <Setter Property="IsEnabled" Value="False" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
                             </StackPanel>
                         </GroupBox>
                     </Grid>
                 </TabItem>
-                <TabItem Header="TabItem">
+                <TabItem Header="Расстановка ВС по рейсам">
+                    <StackPanel>
+                        <Button x:Name="ButtonAirplaneSheldure" Click="ButtonAirplaneSheldure_Click" Width="100"
+                                HorizontalAlignment="Left" Content="Рассчитать" />
+                    </StackPanel>
+                </TabItem>
+                <TabItem Header="кекс">
+
                     <Grid Background="#FFCD7F7F">
+                        <Button Click="Button_Click_1" />
                         <Border Margin="149,0,10,10" BorderThickness="1" BorderBrush="Black" Height="155"
                                 VerticalAlignment="Bottom">
                             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
