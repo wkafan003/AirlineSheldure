@@ -7,7 +7,7 @@
         xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
         xmlns:system="clr-namespace:System;assembly=System.Runtime"
         mc:Ignorable="d"
-        Title="Планирование рейсов и экипажей для них" Height="750" Width="1270" Loaded="MainWindow_OnLoaded">
+        Title="Планирование рейсов и экипажей для них" Height="750" Width="1320" Loaded="MainWindow_OnLoaded">
     <Window.Resources>
         <CollectionViewSource x:Key="FlightViewSource" Source="{x:Null}"
                               d:DesignSource="{d:DesignInstance {x:Type local1:Flight}, CreateList=True}" />
@@ -28,7 +28,24 @@
         <local1:Airplane x:Key="AirplaneAdd" />
         <local1:Crewmember x:Key="CrewmemberAdd" />
     </Window.Resources>
-    <xctk:BusyIndicator x:Name="MainBusy">
+    <xctk:BusyIndicator  x:Name="MainBusy"  IsBusy="False">
+        <xctk:BusyIndicator.BusyContentTemplate>
+            <DataTemplate>
+                <StackPanel Margin="4">
+                    <TextBlock  Text="Расстановка парка ВС по рейсам" FontWeight="Bold" HorizontalAlignment="Center"/>
+                    <StackPanel Margin="4">
+                        <TextBlock x:Name="TextBlockBusy" Text="Выполнение расчетов" TextAlignment="Center"/>
+                        <ProgressBar IsIndeterminate="True" Height="15"/>
+                    </StackPanel>
+                    <Button Click="ButtonBusy_Click" Grid.Column="0" Content="Отмена" HorizontalAlignment="Center"/>
+                </StackPanel>
+            </DataTemplate>
+        </xctk:BusyIndicator.BusyContentTemplate>
+        <xctk:BusyIndicator.ProgressBarStyle>
+            <Style TargetType="ProgressBar">
+                <Setter Property="Visibility" Value="Collapsed"/>
+            </Style>
+        </xctk:BusyIndicator.ProgressBarStyle>
         <Grid>
             <TabControl Margin="10,10,10,10" TabStripPlacement="Left">
                 <TabItem Header="Список аэропортов">
@@ -80,7 +97,7 @@
                         </GroupBox>
                     </Grid>
                 </TabItem>
-                <TabItem Header="Парк воздушных судов">
+                <!--<TabItem Header="Парк воздушных судов">
                     <Grid>
                         <DataGrid x:Name="DatagridAirplane" DataContext="{StaticResource AirplaneViewSource}"
                                   ItemsSource="{Binding}" Margin="0,0,0,321"
@@ -182,10 +199,9 @@
                             </StackPanel>
                         </GroupBox>
                     </Grid>
-                </TabItem>
-                <TabItem Header="Парк воздушных судов2">
+                </TabItem>-->
+                <TabItem Header="Парк воздушных судов">
                     <Grid>
-
                         <GroupBox Margin="10,10,10,120" Header="Парк воздушных судов">
                             <TabControl Margin="0,10,0,0" x:Name="TabControlAirplane"
                                         DataContext="{StaticResource AirplaneViewSource}" ItemsSource="{Binding}"

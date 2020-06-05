@@ -6,6 +6,9 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Security.Permissions;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -32,7 +35,7 @@ namespace AirlineSheldure
 	public partial class MainWindow : Window
 	{
 		private static ApplicationContext _db;
-
+		private static Thread _backgroundWorker;
 		public MainWindow()
 		{
 			InitializeComponent();
@@ -89,7 +92,7 @@ namespace AirlineSheldure
 			return b;
 		}
 
-		public static void AirlineRostering()
+		public static int AirlineRostering()
 		{
 			TimeSpan minTurnTime = _db.TurnTimes.Min(i => i.Time);
 
@@ -130,13 +133,24 @@ namespace AirlineSheldure
 				//fSort = dailyFlights[day].OrderBy(f => f.StartTime).ToArray();
 				fSort = bufEnumerable.OrderBy(f => f.StartTime).ToArray();
 				pairsAirline = new List<int[]>();
-				MakePairsAirline(fSort, pairsAirline, new List<int>(), minTurnTime);
+				try
+				{
+					MakePairsAirline(fSort, pairsAirline, new List<int>(), minTurnTime);
+				}
+				catch
+				{
+					return 1;
+				}
 				MakePiAndCAndTetaAirline(airports, airplanes, turnTimes, fSort, pairsAirline, out PiAirline,
 					out cAirline,
 					out teta);
 
-
+				
 				pairs_flag = MipSolverAirline(PiAirline, cAirline, teta, airplanes.Select(a => a.Count).ToArray());
+				if (pairs_flag == null)
+				{
+					return 2;
+				}
 				List<int> coversFlight = new List<int>();
 				for (int i = 0; i < pairs_flag[0].Length; i++)
 				{
@@ -160,36 +174,37 @@ namespace AirlineSheldure
 				}
 			}
 
-			int[] crewCounts = new[] { 15, 24, 18, 1 };
-			crewCounts = crewCounts.Select(c => c * 5).ToArray();
-			for (int j = 0; j < airports.Length; j++)
-			{
-				for (int i = 0; i < crewCounts[j]; i++)
-				{
-					Crewmember pilot = new Crewmember()
-					{
-						BaseId = airports[j].Id,
-						FirstName = $"Иван {i}_{j}",
-						SecondName = "Иванов",
-						LastName = "Иванович"
-					};
-					Roster r = new Roster();
-					//r.Actions.Add(new Model.Action() { ActionTypeId = (int)ActionEnum.Holiday, StartTime = DateTime.Now, EndTime = DateTime.Now.AddDays(1)});
-					pilot.Roster = r;
-					for (int k = 0; k < airplanes.Length; k++)
-					{
-						Permission p = new Permission()
-						{ AirplaneId = airplanes[k].Id, FirstPilot = true, SecondPilot = true };
-						pilot.Permissions.Add(p);
-						_db.Permissions.Add(p);
-					}
+			//int[] crewCounts = new[] { 15, 24, 18, 1 };
+			//crewCounts = crewCounts.Select(c => c * 5).ToArray();
+			//for (int j = 0; j < airports.Length; j++)
+			//{
+			//	for (int i = 0; i < crewCounts[j]; i++)
+			//	{
+			//		Crewmember pilot = new Crewmember()
+			//		{
+			//			BaseId = airports[j].Id,
+			//			FirstName = $"Иван {i}_{j}",
+			//			SecondName = "Иванов",
+			//			LastName = "Иванович"
+			//		};
+			//		Roster r = new Roster();
+			//		//r.Actions.Add(new Model.Action() { ActionTypeId = (int)ActionEnum.Holiday, StartTime = DateTime.Now, EndTime = DateTime.Now.AddDays(1)});
+			//		pilot.Roster = r;
+			//		for (int k = 0; k < airplanes.Length; k++)
+			//		{
+			//			Permission p = new Permission()
+			//			{ AirplaneId = airplanes[k].Id, FirstPilot = true, SecondPilot = true };
+			//			pilot.Permissions.Add(p);
+			//			_db.Permissions.Add(p);
+			//		}
 
-					_db.Rosters.Add(r);
-					_db.Crewmembers.Add(pilot);
-				}
-			}
+			//		_db.Rosters.Add(r);
+			//		_db.Crewmembers.Add(pilot);
+			//	}
+			//}
 
 			//db.SaveChanges();
+			return 0;
 		}
 
 		public static void CrewRostering()
@@ -708,6 +723,7 @@ namespace AirlineSheldure
 		public static bool[][] MipSolverAirline(bool[,] Pi, double[,] c, bool[,] teta, int[] airplaneCount)
 		{
 			// Create the linear solver with the CBC backend.
+			//solver = Solver.CreateSolver("SimpleMipProgram", "CBC_MIXED_INTEGER_PROGRAMMING");
 			Solver solver = Solver.CreateSolver("SimpleMipProgram", "CBC_MIXED_INTEGER_PROGRAMMING");
 			//CpSolver solver = new CpSolver();
 
@@ -789,7 +805,7 @@ namespace AirlineSheldure
 			Console.WriteLine("Number of constraints = " + solver.NumConstraints());
 
 			Solver.ResultStatus resultStatus = solver.Solve();
-
+			
 			// Check that the problem has an optimal solution.
 			if (resultStatus != Solver.ResultStatus.OPTIMAL)
 			{
@@ -1547,14 +1563,45 @@ namespace AirlineSheldure
 
 		private void ButtonAirplaneSheldure_Click(object sender, RoutedEventArgs e)
 		{
-			_db.AirplanePairs.RemoveRange(_db.AirplanePairs);
-			foreach (var flight in _db.Flights)
+
+			_backgroundWorker = new Thread(() =>
 			{
-				flight.Airplane = null;
-			}
-			_db.SaveChanges();
-			AirlineRostering();
-			_db.SaveChanges();
+				Dispatcher.BeginInvoke((System.Action)(() => MainBusy.IsBusy = true));
+				
+				_db.AirplanePairs.RemoveRange(_db.AirplanePairs);
+				foreach (var flight in _db.Flights)
+				{
+					flight.Airplane = null;
+				}
+				_db.SaveChanges();
+				
+				int res =AirlineRostering();
+				if (res == 1)
+				{
+					MessageBox.Show("Ошибка. Слишком большое количество цепочек рейсов. Попробуйте разбить список рейсов на меньшие списки.","Ошибка");
+					return;
+				}
+				if (res == 2)
+				{
+					MessageBox.Show("Ошибка. Невозможно найти действительное решение задачи расстановки парка ВС по рейсам. Попробуйте изменить список рейсов и/или данные о типах ВС.", "Ошибка");
+					return;
+				}
+				_db.SaveChanges();
+				Dispatcher.BeginInvoke((System.Action)(() => MainBusy.IsBusy = false));
+			});
+			_backgroundWorker.Start();
+			//t.Join();
+			//MainBusy.IsBusy = false;
 		}
+		private void ButtonBusy_Click(object sender, RoutedEventArgs e)
+		{
+			if(_backgroundWorker!=null && _backgroundWorker.IsAlive)
+			{
+				TerminateThread(_backgroundWorker.ManagedThreadId);
+				MainBusy.IsBusy = false;
+			}
+		}
+		[DllImport("Kernel32.dll", CharSet = CharSet.Auto)]
+		public static extern int TerminateThread(int hThread);
 	}
 }
