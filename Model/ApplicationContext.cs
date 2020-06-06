@@ -56,7 +56,7 @@ namespace Model
             modelBuilder.Entity<Airport>().Property(a => a.Name).HasMaxLength(3);
             Flight[] flights;
             List<Flight> allFlights = new List<Flight>();
-            for (int day = 0; day < 10; day++)
+            for (int day = 0; day < 0; day++)
             {
                 flights = File.ReadAllLines("расписание.txt").Select(s => s.Split())
                     .Select(s => new Flight(0, int.Parse(s[0]), int.Parse(s[1]), int.Parse(s[2]),
@@ -1249,6 +1249,8 @@ namespace Model
         private int _id;
         private string _description;
         private int _actionTypeId;
+        private Roster _roster;
+        private int _rosterId;
         private ActionType _actionType;
         private DateTime _startTime;
         private DateTime _endTime;
@@ -1318,7 +1320,26 @@ namespace Model
                 OnPropertyChanged();
             }
         }
-
+        public int RosterId
+        {
+            get => _rosterId;
+            set
+            {
+                if (_rosterId == value) return;
+                _rosterId = value;
+                OnPropertyChanged();
+            }
+        }
+        public Roster Roster
+        {
+            get => _roster;
+            set
+            {
+                if (_roster == value) return;
+                _roster = value;
+                OnPropertyChanged();
+            }
+        }
         public Action()
         {
             _validator = new ActionValidator();

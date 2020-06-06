@@ -23,6 +23,9 @@
     <None Update="data\Аэропорты.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="data\Члены экипажа.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="расписание.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

@@ -163,7 +163,7 @@ namespace AirlineSheldure
 							foreach (var num in pairsAirline[i])
 							{
 								p.Flights.Add(fSort[num]);
-								fSort[num].AirplaneId = airplanes[j].Id;
+								fSort[num].Airplane = airplanes[j];
 							}
 
 							p.Airplane = airplanes[j];
@@ -1208,7 +1208,7 @@ namespace AirlineSheldure
 					var airplanes = _db.Airplanes;
 					Airport newAirport;
 					string[][] source = File.ReadAllLines(op.FileName).Where(s => !s.StartsWith("#"))
-						.Select(s => s.Split()).ToArray();
+						.Select(s => s.Split('\"').Select(a=>a.Trim()).ToArray()).ToArray();
 					foreach (var s in source)
 					{
 						string name = s[0];
@@ -1326,10 +1326,19 @@ namespace AirlineSheldure
 							Capacity = capacity,
 						};
 						airplanes.Add(newAirplane);
-						foreach (var airport in airports)
+						for(int i = 4; i < s.Count(); i+=2)
 						{
-							times.Add(new TurnTime() { Airport = airport, Airplane = newAirplane, Time = TimeSpan.Zero });
+							Airport a = _db.Airports.FirstOrDefault(a => a.Name == s[i]);
+							times.Add(new TurnTime() { Airplane = newAirplane, Airport = a, Time = TimeSpan.Parse(s[i + 1]) });
 						}
+						if (times.Count!=_db.Airports.Count()*airplanes.Count)
+						{
+							throw new InvalidDataException("Не хватает данных !");
+						}
+						//foreach (var airport in airports)
+						//{
+						//	times.Add(new TurnTime() { Airport = airport, Airplane = newAirplane, Time = TimeSpan.Zero });
+						//}
 
 						foreach (var crewmember in crews)
 						{
@@ -1343,13 +1352,14 @@ namespace AirlineSheldure
 						}
 					}
 
-
+					_db.AirplanePairs.RemoveRange(_db.AirplanePairs);
 					_db.Airplanes.RemoveRange(_db.Airplanes);
 					_db.Airplanes.AddRange(airplanes);
 					_db.TurnTimes.RemoveRange(_db.TurnTimes);
 					_db.TurnTimes.AddRange(times);
 					_db.Permissions.RemoveRange(_db.Permissions);
 					_db.Permissions.AddRange(permissions);
+					
 					_db.SaveChanges();
 				}
 			}
@@ -1453,6 +1463,95 @@ namespace AirlineSheldure
 
 			Console.WriteLine("");
 		}
+		private void ButtonCrewMemberLoad_Click(object sender, RoutedEventArgs e)
+		{
+			OpenFileDialog op = new OpenFileDialog()
+			{
+				Filter = "Текстовые файлы (*.txt)|*.txt|Все файлы (*.*)|*.*",
+			};
+			try
+			{
+				if (op.ShowDialog() == true)
+				{
+					List<Crewmember> crewmembers = new List<Crewmember>();
+					List<Permission> permissions = new List<Permission>();
+					List<Roster> rosters = new List<Roster>();
+					List<Model.Action> actions = new List<Model.Action>();
+
+					string[][] source = File.ReadAllLines(op.FileName).Where(s => !s.StartsWith("#"))
+						.Select(s => s.Split(' ',StringSplitOptions.RemoveEmptyEntries)).ToArray();
+					Crewmember crew;
+					for (int i = 0; i < source.Length; i+=3)
+					{
+						crew = new Crewmember()
+						{
+							FirstName = source[i][0],
+							SecondName = source[i][1],
+							LastName = source[i][2],
+							Base = _db.Airports.FirstOrDefault(a => a.Name ==source[i][3]) ?? throw new Exception("Ошибка во входных данных"),
+						};
+						for (int j = 0; j < source[i+1].Length; j+=3)
+						{
+							permissions.Add(new Permission()
+							{
+								Crewmember=crew,
+								Airplane = _db.Airplanes.FirstOrDefault(a => a.Name == source[i+1][j]) ?? throw new Exception("Ошибка во входных данных"),
+								FirstPilot = source[i+1][j+1]=="Да",
+								SecondPilot = source[i+1][j+2]=="Да"
+							});
+						}
+						foreach (var airplane in _db.Airplanes.AsEnumerable().Except(permissions.Where(p=>p.Crewmember==crew).Select(p=>p.Airplane)))
+						{
+							permissions.Add(new Permission()
+							{
+								Crewmember = crew,
+								Airplane = airplane,
+								FirstPilot = false,
+								SecondPilot = false,
+							});
+						}
+						Roster r = new Roster();
+						crew.Roster = r;
+						string[] s = string.Join(" ", source[i + 2]).Split('\"').Select(a => a.Trim()).Where(a => a.Length > 0).ToArray();
+						for (int j = 0; j < s.Length; j+=4)
+						{
+							
+							actions.Add(new Model.Action
+							{
+								ActionTypeId = int.Parse(s[j*4+0]),
+								Description = s[j * 4 + 1],
+								StartTime = DateTime.Parse(s[j * 4 + 2]),
+								EndTime = DateTime.Parse(s[j * 4 + 3]),
+								Roster=r
+							});
+						}
+						rosters.Add(r);
+					}
+					
+
+
+					_db.Permissions.RemoveRange(_db.Permissions);
+					_db.Permissions.AddRange(permissions);
+					_db.Actions.RemoveRange(_db.Actions);
+					_db.Actions.AddRange(actions);
+					_db.Rosters.RemoveRange(_db.Rosters);
+					_db.Rosters.AddRange(rosters);
+					_db.Crewmembers.RemoveRange(_db.Crewmembers);
+					_db.Crewmembers.AddRange(crewmembers);
+					_db.CrewmemberDuties.RemoveRange(_db.CrewmemberDuties);
+					_db.CrewmemberPairs.RemoveRange(_db.CrewmemberPairs);
+					_db.SaveChanges();
+				}
+			}
+			catch (DbUpdateException ee)
+			{
+				MessageBox.Show("Ошибка записи в базу данных! ", "Ошибка");
+			}
+			catch (Exception ee)
+			{
+				MessageBox.Show("Ошибка чтения файла! " + ee.Message, "Ошибка");
+			}
+		}
 
 		private void ButtonCrewmemberAdd_Click(object sender, RoutedEventArgs e)
 		{
@@ -1512,14 +1611,15 @@ namespace AirlineSheldure
 
 		private void ButtonCrewMemberDelete_Click(object sender, RoutedEventArgs e)
 		{
-			if (TabControlAirplane.SelectedItem != null & MessageBox.Show(this, $"Удалить запись о члене экипажа - {((Crewmember)TabControlAirplane.SelectedItem).Fullname}. Вы уверены?", "Удаление члена экипажа",
+			if (TabControlCrewmember.SelectedItem != null & MessageBox.Show(this, $"Удалить запись о члене экипажа - {((Crewmember)TabControlCrewmember.SelectedItem).Fullname}. Вы уверены?", "Удаление члена экипажа",
 			   MessageBoxButton.OKCancel) == MessageBoxResult.OK)
 			{
 				try
 				{
-					Crewmember crew = (Crewmember)TabControlAirplane.SelectedItem;
+					Crewmember crew = (Crewmember)TabControlCrewmember.SelectedItem;
 					_db.Permissions.RemoveRange(crew.Permissions);
-
+					_db.Actions.RemoveRange(crew.Roster.Actions);
+					_db.Rosters.Remove(crew.Roster);
 					_db.Crewmembers.Remove(crew);
 					_db.SaveChanges();
 				}
@@ -1574,8 +1674,16 @@ namespace AirlineSheldure
 					flight.Airplane = null;
 				}
 				_db.SaveChanges();
-				
-				int res =AirlineRostering();
+				int res;
+				try
+				{
+					res = AirlineRostering();
+				}
+				catch(Exception ee)
+				{
+					MessageBox.Show("Непредвиденная ошибка.", "Ошибка");
+					return;
+				}
 				if (res == 1)
 				{
 					MessageBox.Show("Ошибка. Слишком большое количество цепочек рейсов. Попробуйте разбить список рейсов на меньшие списки.","Ошибка");
@@ -1603,5 +1711,7 @@ namespace AirlineSheldure
 		}
 		[DllImport("Kernel32.dll", CharSet = CharSet.Auto)]
 		public static extern int TerminateThread(int hThread);
+
+		
 	}
 }
