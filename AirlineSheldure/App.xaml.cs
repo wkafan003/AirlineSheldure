@@ -13,5 +13,15 @@ namespace AirlineSheldure
 	/// </summary>
 	public partial class App : Application
 	{
-	}
+        private void ApplicationStart(object sender, StartupEventArgs e)
+        {
+            Login login = new Login();
+            MainWindow window = new MainWindow();
+            login.ShowDialog();
+            if (login.Sucsess)
+                window.Show();
+            else
+                window.Close();
+        }
+    }
 }

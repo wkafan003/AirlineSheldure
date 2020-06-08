@@ -13,6 +13,10 @@ namespace Model
 {
     public class ApplicationContext : DbContext
     {
+        private string _host;
+        private string _port;
+        private string _username;
+        private string _password;
         public DbSet<Airport> Airports { get; set; }
         public DbSet<Flight> Flights { get; set; }
         public DbSet<Airplane> Airplanes { get; set; }
@@ -28,15 +32,19 @@ namespace Model
         public DbSet<ActionType> ActionTypes { get; set; }
 
 
-        public ApplicationContext()
+        public ApplicationContext(string host,string port,string username, string password)
         {
-            Database.EnsureDeleted();
+            _host = host;
+            _port = port;
+            _username = username;
+            _password = password;
+            //Database.EnsureDeleted();
             Database.EnsureCreated();
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Database=diplom;Username=postgres;Password=123");
+            optionsBuilder.UseNpgsql($"Host={_host};Port={_port};Database=diplom;Username={_username};Password={_password}");
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -54,104 +62,104 @@ namespace Model
                 .HasIndex(a=>a.Name)
                 .IsUnique();
             modelBuilder.Entity<Airport>().Property(a => a.Name).HasMaxLength(3);
-            Flight[] flights;
-            List<Flight> allFlights = new List<Flight>();
-            for (int day = 0; day < 0; day++)
-            {
-                flights = File.ReadAllLines("расписание.txt").Select(s => s.Split())
-                    .Select(s => new Flight(0, int.Parse(s[0]), int.Parse(s[1]), int.Parse(s[2]),
-                        DateTime.Parse(s[3]), DateTime.Parse(s[4]), double.Parse(s[5]), double.Parse(s[6]))).ToArray();
-                for (int i = 0; i < flights.Length; i++)
-                {
-                    flights[i].StartTime += TimeSpan.FromDays(day);
-                    flights[i].EndTime += TimeSpan.FromDays(day);
-                    flights[i].Num += day * 100;
-                    flights[i].Id = -flights.Length * (day + 1) + i;
-                }
-
-                allFlights.AddRange(flights);
-            }
-
-
-            modelBuilder.Entity<Flight>().HasData(allFlights);
-            modelBuilder.Entity<Airplane>().HasData(new[]
-            {
-                new Airplane() {Id = -3, Name = "A320", Count = 4, Cost = 2700, Capacity = 164},
-                new Airplane() {Id = -2, Name = "B735", Count = 2, Cost = 2400, Capacity = 138},
-                new Airplane() {Id = -1, Name = "B772", Count = 3, Cost = 6100, Capacity = 305}
-            });
-            modelBuilder.Entity<Airport>().HasData(new Airport[]
-            {
-                new Airport() {Id = -4, Name = "CDG", Fullname = "Charles De Gaulle, Париж, Франция"},
-                new Airport() {Id = -3, Name = "LED", Fullname = "Пулково, С.Петербург, Россия"},
-                new Airport() {Id = -2, Name = "OVB", Fullname = "Толмачево, Новосибирск, Россия"},
-                new Airport() {Id = -1, Name = "SVO", Fullname = "Шереметьево, Москва, Россия"},
-            });
-            modelBuilder.Entity<TurnTime>().HasData(new TurnTime[]
-            {
-                new TurnTime() {Id = -12, AirportId = -4, AirplaneId = -3, Time = new TimeSpan(0, 35, 0)},
-                new TurnTime() {Id = -11, AirportId = -4, AirplaneId = -2, Time = new TimeSpan(0, 40, 0)},
-                new TurnTime() {Id = -10, AirportId = -4, AirplaneId = -1, Time = new TimeSpan(0, 60, 0)},
-                new TurnTime() {Id = -9, AirportId = -3, AirplaneId = -3, Time = new TimeSpan(0, 40, 0)},
-                new TurnTime() {Id = -8, AirportId = -3, AirplaneId = -2, Time = new TimeSpan(0, 45, 0)},
-                new TurnTime() {Id = -7, AirportId = -3, AirplaneId = -1, Time = new TimeSpan(0, 55, 0)},
-                new TurnTime() {Id = -6, AirportId = -2, AirplaneId = -3, Time = new TimeSpan(0, 45, 0)},
-                new TurnTime() {Id = -5, AirportId = -2, AirplaneId = -2, Time = new TimeSpan(0, 50, 0)},
-                new TurnTime() {Id = -4, AirportId = -2, AirplaneId = -1, Time = new TimeSpan(0, 70, 0)},
-                new TurnTime() {Id = -3, AirportId = -1, AirplaneId = -3, Time = new TimeSpan(0, 40, 0)},
-                new TurnTime() {Id = -2, AirportId = -1, AirplaneId = -2, Time = new TimeSpan(0, 45, 0)},
-                new TurnTime() {Id = -1, AirportId = -1, AirplaneId = -1, Time = new TimeSpan(0, 60, 0)},
-            });
-            Crewmember[] crewmembers = new Crewmember[]
-            {
-                new Crewmember() {Id = -8, Fullname = "Иван Петров Григорьевич", BaseId = -4},
-                new Crewmember() {Id = -7, Fullname = "Антон Краснов Григорьевич", BaseId = -4},
-                new Crewmember() {Id = -6, Fullname = "Артем Соловьев Григорьевич", BaseId = -3},
-                new Crewmember() {Id = -5, Fullname = "Максим Сидоров Григорьевич", BaseId = -3},
-                new Crewmember() {Id = -4, Fullname = "Илья Козырев Григорьевич", BaseId = -2},
-                new Crewmember() {Id = -3, Fullname = "Андрей Морозов Григорьевич", BaseId = -2},
-                new Crewmember() {Id = -2, Fullname = "Владимир Иванов Григорьевич", BaseId = -1},
-                new Crewmember() {Id = -1, Fullname = "Никита Горелов Григорьевич", BaseId = -1},
-            };
-            modelBuilder.Entity<Crewmember>().HasData(crewmembers);
-            Roster[] rosters = new Roster[crewmembers.Length];
-            for (int i = 0; i < rosters.Length; i++)
-            {
-                rosters[i] = new Roster() {Id = crewmembers[i].Id};
-                crewmembers[i].RosterId = rosters[i].Id;
-            }
-
-            modelBuilder.Entity<Roster>().HasData(rosters);
-            modelBuilder.Entity<Permission>().HasData(new Permission[]
-            {
-                new Permission() {Id = -24, CrewmemberId = -8, AirplaneId = -3, FirstPilot = true, SecondPilot = true},
-                new Permission() {Id = -23, CrewmemberId = -8, AirplaneId = -2, FirstPilot = true, SecondPilot = true},
-                new Permission() {Id = -22, CrewmemberId = -8, AirplaneId = -1, FirstPilot = false, SecondPilot = true},
-                new Permission() {Id = -21, CrewmemberId = -7, AirplaneId = -3, FirstPilot = false, SecondPilot = true},
-                new Permission() {Id = -20, CrewmemberId = -7, AirplaneId = -2, FirstPilot = false, SecondPilot = true},
-                new Permission() {Id = -19, CrewmemberId = -7, AirplaneId = -1, FirstPilot = false, SecondPilot = true},
-
-                new Permission() {Id = -18, CrewmemberId = -6, AirplaneId = -3, FirstPilot = true, SecondPilot = true},
-                new Permission() {Id = -17, CrewmemberId = -6, AirplaneId = -2, FirstPilot = true, SecondPilot = true},
-                new Permission() {Id = -16, CrewmemberId = -6, AirplaneId = -1, FirstPilot = false, SecondPilot = true},
-                new Permission() {Id = -15, CrewmemberId = -5, AirplaneId = -3, FirstPilot = false, SecondPilot = true},
-                new Permission() {Id = -14, CrewmemberId = -5, AirplaneId = -2, FirstPilot = false, SecondPilot = true},
-                new Permission() {Id = -13, CrewmemberId = -5, AirplaneId = -1, FirstPilot = false, SecondPilot = true},
-
-                new Permission() {Id = -12, CrewmemberId = -4, AirplaneId = -3, FirstPilot = true, SecondPilot = true},
-                new Permission() {Id = -11, CrewmemberId = -4, AirplaneId = -2, FirstPilot = true, SecondPilot = true},
-                new Permission() {Id = -10, CrewmemberId = -4, AirplaneId = -1, FirstPilot = false, SecondPilot = true},
-                new Permission() {Id = -9, CrewmemberId = -3, AirplaneId = -3, FirstPilot = false, SecondPilot = true},
-                new Permission() {Id = -8, CrewmemberId = -3, AirplaneId = -2, FirstPilot = false, SecondPilot = true},
-                new Permission() {Id = -7, CrewmemberId = -3, AirplaneId = -1, FirstPilot = false, SecondPilot = true},
-
-                new Permission() {Id = -6, CrewmemberId = -2, AirplaneId = -3, FirstPilot = true, SecondPilot = true},
-                new Permission() {Id = -5, CrewmemberId = -2, AirplaneId = -2, FirstPilot = true, SecondPilot = true},
-                new Permission() {Id = -4, CrewmemberId = -2, AirplaneId = -1, FirstPilot = false, SecondPilot = true},
-                new Permission() {Id = -3, CrewmemberId = -1, AirplaneId = -3, FirstPilot = false, SecondPilot = true},
-                new Permission() {Id = -2, CrewmemberId = -1, AirplaneId = -2, FirstPilot = false, SecondPilot = true},
-                new Permission() {Id = -1, CrewmemberId = -1, AirplaneId = -1, FirstPilot = false, SecondPilot = true},
-            });
+            // Flight[] flights;
+            // List<Flight> allFlights = new List<Flight>();
+            // for (int day = 0; day < 0; day++)
+            // {
+            //     flights = File.ReadAllLines("расписание.txt").Select(s => s.Split())
+            //         .Select(s => new Flight(0, int.Parse(s[0]), int.Parse(s[1]), int.Parse(s[2]),
+            //             DateTime.Parse(s[3]), DateTime.Parse(s[4]), double.Parse(s[5]), double.Parse(s[6]))).ToArray();
+            //     for (int i = 0; i < flights.Length; i++)
+            //     {
+            //         flights[i].StartTime += TimeSpan.FromDays(day);
+            //         flights[i].EndTime += TimeSpan.FromDays(day);
+            //         flights[i].Num += day * 100;
+            //         flights[i].Id = -flights.Length * (day + 1) + i;
+            //     }
+            //
+            //     allFlights.AddRange(flights);
+            // }
+            //
+            //
+            // modelBuilder.Entity<Flight>().HasData(allFlights);
+            // modelBuilder.Entity<Airplane>().HasData(new[]
+            // {
+            //     new Airplane() {Id = -3, Name = "A320", Count = 4, Cost = 2700, Capacity = 164},
+            //     new Airplane() {Id = -2, Name = "B735", Count = 2, Cost = 2400, Capacity = 138},
+            //     new Airplane() {Id = -1, Name = "B772", Count = 3, Cost = 6100, Capacity = 305}
+            // });
+            // modelBuilder.Entity<Airport>().HasData(new Airport[]
+            // {
+            //     new Airport() {Id = -4, Name = "CDG", Fullname = "Charles De Gaulle, Париж, Франция"},
+            //     new Airport() {Id = -3, Name = "LED", Fullname = "Пулково, С.Петербург, Россия"},
+            //     new Airport() {Id = -2, Name = "OVB", Fullname = "Толмачево, Новосибирск, Россия"},
+            //     new Airport() {Id = -1, Name = "SVO", Fullname = "Шереметьево, Москва, Россия"},
+            // });
+            // modelBuilder.Entity<TurnTime>().HasData(new TurnTime[]
+            // {
+            //     new TurnTime() {Id = -12, AirportId = -4, AirplaneId = -3, Time = new TimeSpan(0, 35, 0)},
+            //     new TurnTime() {Id = -11, AirportId = -4, AirplaneId = -2, Time = new TimeSpan(0, 40, 0)},
+            //     new TurnTime() {Id = -10, AirportId = -4, AirplaneId = -1, Time = new TimeSpan(0, 60, 0)},
+            //     new TurnTime() {Id = -9, AirportId = -3, AirplaneId = -3, Time = new TimeSpan(0, 40, 0)},
+            //     new TurnTime() {Id = -8, AirportId = -3, AirplaneId = -2, Time = new TimeSpan(0, 45, 0)},
+            //     new TurnTime() {Id = -7, AirportId = -3, AirplaneId = -1, Time = new TimeSpan(0, 55, 0)},
+            //     new TurnTime() {Id = -6, AirportId = -2, AirplaneId = -3, Time = new TimeSpan(0, 45, 0)},
+            //     new TurnTime() {Id = -5, AirportId = -2, AirplaneId = -2, Time = new TimeSpan(0, 50, 0)},
+            //     new TurnTime() {Id = -4, AirportId = -2, AirplaneId = -1, Time = new TimeSpan(0, 70, 0)},
+            //     new TurnTime() {Id = -3, AirportId = -1, AirplaneId = -3, Time = new TimeSpan(0, 40, 0)},
+            //     new TurnTime() {Id = -2, AirportId = -1, AirplaneId = -2, Time = new TimeSpan(0, 45, 0)},
+            //     new TurnTime() {Id = -1, AirportId = -1, AirplaneId = -1, Time = new TimeSpan(0, 60, 0)},
+            // });
+            // Crewmember[] crewmembers = new Crewmember[]
+            // {
+            //     new Crewmember() {Id = -8, Fullname = "Иван Петров Григорьевич", BaseId = -4},
+            //     new Crewmember() {Id = -7, Fullname = "Антон Краснов Григорьевич", BaseId = -4},
+            //     new Crewmember() {Id = -6, Fullname = "Артем Соловьев Григорьевич", BaseId = -3},
+            //     new Crewmember() {Id = -5, Fullname = "Максим Сидоров Григорьевич", BaseId = -3},
+            //     new Crewmember() {Id = -4, Fullname = "Илья Козырев Григорьевич", BaseId = -2},
+            //     new Crewmember() {Id = -3, Fullname = "Андрей Морозов Григорьевич", BaseId = -2},
+            //     new Crewmember() {Id = -2, Fullname = "Владимир Иванов Григорьевич", BaseId = -1},
+            //     new Crewmember() {Id = -1, Fullname = "Никита Горелов Григорьевич", BaseId = -1},
+            // };
+            // modelBuilder.Entity<Crewmember>().HasData(crewmembers);
+            // Roster[] rosters = new Roster[crewmembers.Length];
+            // for (int i = 0; i < rosters.Length; i++)
+            // {
+            //     rosters[i] = new Roster() {Id = crewmembers[i].Id};
+            //     crewmembers[i].RosterId = rosters[i].Id;
+            // }
+            //
+            // modelBuilder.Entity<Roster>().HasData(rosters);
+            // modelBuilder.Entity<Permission>().HasData(new Permission[]
+            // {
+            //     new Permission() {Id = -24, CrewmemberId = -8, AirplaneId = -3, FirstPilot = true, SecondPilot = true},
+            //     new Permission() {Id = -23, CrewmemberId = -8, AirplaneId = -2, FirstPilot = true, SecondPilot = true},
+            //     new Permission() {Id = -22, CrewmemberId = -8, AirplaneId = -1, FirstPilot = false, SecondPilot = true},
+            //     new Permission() {Id = -21, CrewmemberId = -7, AirplaneId = -3, FirstPilot = false, SecondPilot = true},
+            //     new Permission() {Id = -20, CrewmemberId = -7, AirplaneId = -2, FirstPilot = false, SecondPilot = true},
+            //     new Permission() {Id = -19, CrewmemberId = -7, AirplaneId = -1, FirstPilot = false, SecondPilot = true},
+            //
+            //     new Permission() {Id = -18, CrewmemberId = -6, AirplaneId = -3, FirstPilot = true, SecondPilot = true},
+            //     new Permission() {Id = -17, CrewmemberId = -6, AirplaneId = -2, FirstPilot = true, SecondPilot = true},
+            //     new Permission() {Id = -16, CrewmemberId = -6, AirplaneId = -1, FirstPilot = false, SecondPilot = true},
+            //     new Permission() {Id = -15, CrewmemberId = -5, AirplaneId = -3, FirstPilot = false, SecondPilot = true},
+            //     new Permission() {Id = -14, CrewmemberId = -5, AirplaneId = -2, FirstPilot = false, SecondPilot = true},
+            //     new Permission() {Id = -13, CrewmemberId = -5, AirplaneId = -1, FirstPilot = false, SecondPilot = true},
+            //
+            //     new Permission() {Id = -12, CrewmemberId = -4, AirplaneId = -3, FirstPilot = true, SecondPilot = true},
+            //     new Permission() {Id = -11, CrewmemberId = -4, AirplaneId = -2, FirstPilot = true, SecondPilot = true},
+            //     new Permission() {Id = -10, CrewmemberId = -4, AirplaneId = -1, FirstPilot = false, SecondPilot = true},
+            //     new Permission() {Id = -9, CrewmemberId = -3, AirplaneId = -3, FirstPilot = false, SecondPilot = true},
+            //     new Permission() {Id = -8, CrewmemberId = -3, AirplaneId = -2, FirstPilot = false, SecondPilot = true},
+            //     new Permission() {Id = -7, CrewmemberId = -3, AirplaneId = -1, FirstPilot = false, SecondPilot = true},
+            //
+            //     new Permission() {Id = -6, CrewmemberId = -2, AirplaneId = -3, FirstPilot = true, SecondPilot = true},
+            //     new Permission() {Id = -5, CrewmemberId = -2, AirplaneId = -2, FirstPilot = true, SecondPilot = true},
+            //     new Permission() {Id = -4, CrewmemberId = -2, AirplaneId = -1, FirstPilot = false, SecondPilot = true},
+            //     new Permission() {Id = -3, CrewmemberId = -1, AirplaneId = -3, FirstPilot = false, SecondPilot = true},
+            //     new Permission() {Id = -2, CrewmemberId = -1, AirplaneId = -2, FirstPilot = false, SecondPilot = true},
+            //     new Permission() {Id = -1, CrewmemberId = -1, AirplaneId = -1, FirstPilot = false, SecondPilot = true},
+            // });
             modelBuilder.Entity<ActionType>().HasData(new ActionType[]
             {
                 new ActionType() {Id = -7, Type = "Другое"},
@@ -278,6 +286,7 @@ namespace Model
                 if (_fromId == value) return;
                 _fromId = value;
                 OnPropertyChanged();
+                OnPropertyChanged("ToId");
             }
         }
 
@@ -300,6 +309,7 @@ namespace Model
                 if (_toId == value) return;
                 _toId = value;
                 OnPropertyChanged();
+                OnPropertyChanged("FromId");
             }
         }
 
@@ -322,6 +332,7 @@ namespace Model
                 if (_startTime == value) return;
                 _startTime = value;
                 OnPropertyChanged();
+                OnPropertyChanged("EndTime");
             }
         }
 
@@ -333,6 +344,7 @@ namespace Model
                 if (_endTime == value) return;
                 _endTime = value;
                 OnPropertyChanged();
+                OnPropertyChanged("StartTime");
             }
         }
 
@@ -1307,6 +1319,7 @@ namespace Model
                 if (_startTime == value) return;
                 _startTime = value;
                 OnPropertyChanged();
+                OnPropertyChanged("EndTime");
             }
         }
 
@@ -1318,6 +1331,7 @@ namespace Model
                 if (_endTime == value) return;
                 _endTime = value;
                 OnPropertyChanged();
+                OnPropertyChanged("StartTime");
             }
         }
         public int RosterId

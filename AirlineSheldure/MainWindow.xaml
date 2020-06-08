@@ -29,22 +29,23 @@
         <local1:Airplane x:Key="AirplaneAdd" />
         <local1:Crewmember x:Key="CrewmemberAdd" />
     </Window.Resources>
-    <xctk:BusyIndicator  x:Name="MainBusy"  IsBusy="False">
+    <xctk:BusyIndicator x:Name="MainBusy" IsBusy="False">
         <xctk:BusyIndicator.BusyContentTemplate>
             <DataTemplate>
                 <StackPanel Margin="4">
-                    <TextBlock  Text="Расстановка парка ВС по рейсам" FontWeight="Bold" HorizontalAlignment="Center"/>
+                    <TextBlock x:Name="TextBlockBusy" Text="{Binding ElementName=MainBusy,Path=DataContext}"
+                               FontWeight="Bold" HorizontalAlignment="Center" />
                     <StackPanel Margin="4">
-                        <TextBlock x:Name="TextBlockBusy" Text="Выполнение расчетов" TextAlignment="Center"/>
-                        <ProgressBar IsIndeterminate="True" Height="15"/>
+                        <TextBlock Text="Выполнение расчетов" TextAlignment="Center" />
+                        <ProgressBar IsIndeterminate="True" Height="15" />
                     </StackPanel>
-                    <Button Click="ButtonBusy_Click" Grid.Column="0" Content="Отмена" HorizontalAlignment="Center"/>
+                    <Button Click="ButtonBusy_Click" Grid.Column="0" Content="Отмена" HorizontalAlignment="Center" />
                 </StackPanel>
             </DataTemplate>
         </xctk:BusyIndicator.BusyContentTemplate>
         <xctk:BusyIndicator.ProgressBarStyle>
             <Style TargetType="ProgressBar">
-                <Setter Property="Visibility" Value="Collapsed"/>
+                <Setter Property="Visibility" Value="Collapsed" />
             </Style>
         </xctk:BusyIndicator.ProgressBarStyle>
         <Grid>
@@ -462,7 +463,7 @@
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate DataType="local1:Flight">
                                             <TextBlock
-                                                
+
                                                 Text="{Binding Airplane, Converter={StaticResource MyAirplaneConveter}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
@@ -685,7 +686,8 @@
                                                                   LoadingRow="Datagrid_LoadingRow"
                                                                   EnableRowVirtualization="True"
                                                                   RowDetailsVisibilityMode="VisibleWhenSelected"
-                                                                  IsSynchronizedWithCurrentItem="False">
+                                                                  IsSynchronizedWithCurrentItem="False"
+                                                                  CanUserDeleteRows="True">
                                                             <DataGrid.Columns>
                                                                 <DataGridTemplateColumn Header="Тип события"
                                                                                         SortMemberPath="ActionType.Type">
@@ -821,24 +823,66 @@
                 </TabItem>
                 <TabItem Header="Расстановка ВС по рейсам">
                     <StackPanel Margin="10,10,10,10">
-                        <TextBlock Text="Расчет оптимальной расстановки ВС по рейсам. После завершения у каждого рейса появится назначенный тип ВС."/>
-                        <Button Margin="0,10,0,0" x:Name="ButtonAirplaneSheldure" Click="ButtonAirplaneSheldure_Click" Width="100"
-                                HorizontalAlignment="Left" Content="Рассчитать" />
+                        <TextBlock
+                            Text="Расчет оптимальной расстановки ВС по рейсам. После завершения у каждого рейса появится назначенный тип ВС." />
+                        <StackPanel Orientation="Horizontal">
+                            <Button Margin="0,10,10,0" x:Name="ButtonAirplaneSheldure"
+                                    Click="ButtonAirplaneSheldure_Click" Width="100"
+                                    HorizontalAlignment="Left" Content="Рассчитать" />
+                            <Popup x:Name="popup1" Placement="Right" StaysOpen="False"
+                                   PlacementTarget="{Binding ElementName=ButtonAirplaneSheldure}" MaxWidth="180"
+                                   AllowsTransparency="True">
+                                <TextBlock TextWrapping="Wrap" Opacity="0.8" Background="#FFAABCEE" Text="Успешно!" />
+                            </Popup>
+                        </StackPanel>
+
+
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Время работы алгоритма :" />
+                            <TextBlock Margin="10,0,0,0" x:Name="TextblockAirplaneSheldure" />
+                        </StackPanel>
+
                     </StackPanel>
                 </TabItem>
-                <TabItem Header="кекс">
+                <TabItem Header="Расписание членов экипажей">
+                    <StackPanel Margin="10,10,10,10">
+                        <TextBlock
+                            Text="Построение оптимального расписания. После выполнения алгоритма, в расписании у членов экипажей появтся события полета, ожидания в гостинице и т.д." />
+                        <StackPanel Margin="0,10,0,0" Orientation="Horizontal">
+                            <TextBlock Text="Разбить рейсы на равные части длинной в" />
+                            <xctk:IntegerUpDown Margin="10,0,10,0" Minimum="1" Value="10" x:Name="IntegerUpDownCrew" />
+                            <TextBlock Text="Дней" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Button Margin="0,10,0,0" x:Name="ButtonCrewRostering" Click="ButtonCrewRostering_Click"
+                                    Width="100"
+                                    HorizontalAlignment="Left" Content="Рассчитать" />
+                            <Popup x:Name="popup2" Placement="Right" StaysOpen="False"
+                                   PlacementTarget="{Binding ElementName=ButtonCrewRostering}" MaxWidth="180"
+                                   AllowsTransparency="True">
+                                <TextBlock TextWrapping="Wrap" Opacity="0.8" Background="#FFAABCEE" Text="Успешно!" />
+                            </Popup>
+                        </StackPanel>
+                        <StackPanel Margin="0,10,0,0" Orientation="Horizontal">
+                            <TextBlock Text="Время работы алгоритма :" />
+                            <TextBlock Margin="10,0,0,0" x:Name="TextblockCrewRostering" />
+                        </StackPanel>
 
-                    <Grid Background="#FFCD7F7F">
-                        <Button Click="Button_Click_1" />
-                        <Border Margin="149,0,10,10" BorderThickness="1" BorderBrush="Black" Height="155"
-                                VerticalAlignment="Bottom">
-                            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
-                                <Canvas Margin="0" Width="1000" x:Name="MainCanvas" />
-                            </ScrollViewer>
-                        </Border>
-
-                    </Grid>
+                    </StackPanel>
                 </TabItem>
+                <!-- <TabItem Header="кекс"> -->
+                <!-- -->
+                <!--     <Grid Background="#FFCD7F7F"> -->
+                <!--         <Button Click="Button_Click_1" /> -->
+                <!--         <Border Margin="149,0,10,10" BorderThickness="1" BorderBrush="Black" Height="155" -->
+                <!--                 VerticalAlignment="Bottom"> -->
+                <!--             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"> -->
+                <!--                 <Canvas Margin="0" Width="1000" x:Name="MainCanvas" /> -->
+                <!--             </ScrollViewer> -->
+                <!--         </Border> -->
+                <!-- -->
+                <!--     </Grid> -->
+                <!-- </TabItem> -->
             </TabControl>
         </Grid>
     </xctk:BusyIndicator>

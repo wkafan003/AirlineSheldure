@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Security.Permissions;
 using System.Text;
 using System.Threading;
@@ -34,39 +35,12 @@ namespace AirlineSheldure
 	/// </summary>
 	public partial class MainWindow : Window
 	{
+		private string _pkey = "YsODwo7CsMOWRTDDiRZX0LPStdGO0ZvSktKP";
 		private static ApplicationContext _db;
 		private static Thread _backgroundWorker;
 		public MainWindow()
 		{
 			InitializeComponent();
-			for (int i = 0; i < 15; i++)
-			{
-				var b = MakeBorder($"{i}", 35, 40, 100 * i, 100, Color.FromArgb(10 * 255 / 100, 197, 39, 39));
-				MainCanvas.Children.Add(b);
-			}
-
-			MainCanvas.Width = 14 * 100 + 35;
-
-
-			_db = new ApplicationContext();
-			foreach (var flight in _db.Flights.AsEnumerable().Where(f => f.EndTime.TimeOfDay == TimeSpan.Zero))
-			{
-				flight.EndTime += TimeSpan.FromDays(1);
-			}
-
-			//Datagrid1.DataContext = db.Flights.Local.ToObservableCollection();
-			//Datagrid1.ItemsSource = _db.Flights.Local.ToObservableCollection();
-			//_db.Airplanes.Add(new Airplane() {Capacity = 200, Cost = 2600, Count = 4, Name = "Кекс летающий"});
-			//_db.Airplanes.RemoveRange(_db.Airplanes);
-			//_db.Flights.RemoveRange(_db.Flights);
-			//_db.SaveChanges();
-
-			//AirlineRostering();
-			//_db.SaveChanges();
-			//CrewRostering();
-			_db.SaveChanges();
-
-			Console.WriteLine();
 		}
 
 		public static Border MakeBorder(string text, int width, int height, double x, double y, Color background)
@@ -92,7 +66,7 @@ namespace AirlineSheldure
 			return b;
 		}
 
-		public static int AirlineRostering()
+		public static int AirlineRostering(int dayBuf)
 		{
 			TimeSpan minTurnTime = _db.TurnTimes.Min(i => i.Time);
 
@@ -117,7 +91,7 @@ namespace AirlineSheldure
 				}
 			}
 
-			int dayBufFlight = 1;
+			int dayBufFlight = dayBuf;
 			var dailyFlights = (_db.Flights.AsEnumerable() ?? throw new Exception("Список полетов пуст!."))
 				.GroupBy(i => i.StartTime.DayOfYear).ToArray();
 
@@ -207,12 +181,12 @@ namespace AirlineSheldure
 			return 0;
 		}
 
-		public static void CrewRostering()
+		public static int CrewRostering(int dayBuf)
 		{
 			Airport[] airports = _db.Airports.OrderBy(i => i.Id).ToArray();
 			Airplane[] airplanes = _db.Airplanes.OrderBy(i => i.Id).ToArray();
 			//fSort = db.Flights.OrderBy(f => f.StartTime).ToArray();
-			int dayBufCrew = 10;
+			int dayBufCrew = dayBuf;
 			var dailyCrew = (_db.Flights.AsEnumerable() ?? throw new Exception("Список полетов пуст!."))
 				.GroupBy(i => i.StartTime.DayOfYear).ToArray();
 			Flight[] fSort;
@@ -232,6 +206,14 @@ namespace AirlineSheldure
 				double maxSit = 4;
 				double maxElapse = 12;
 				double maxFly = 8;
+				try
+				{
+					MakeDutiesCrew(minSit, maxSit, maxElapse, maxFly, fSort, duties, new List<int>(fSort.Length));
+				}
+				catch
+				{
+					return 1;
+				}
 				MakeDutiesCrew(minSit, maxSit, maxElapse, maxFly, fSort, duties, new List<int>(fSort.Length));
 				duties = duties.OrderBy(i => fSort[i.First()].StartTime).ToList();
 
@@ -239,7 +221,15 @@ namespace AirlineSheldure
 				int maxDuties = 3;
 				double minRest = 12;
 				double maxTAFB = 24 * 4;
-				MakePairsCrew(maxDuties, minRest, maxTAFB, fSort, duties, pairsCrew, new List<int[]>(maxDuties));
+				try
+				{
+					MakePairsCrew(maxDuties, minRest, maxTAFB, fSort, duties, pairsCrew, new List<int[]>(maxDuties));
+				}
+				catch
+				{
+					return 1;
+				}
+				
 
 				bool[,] Pi;
 				double[] c;
@@ -250,6 +240,10 @@ namespace AirlineSheldure
 				MakePiAndCCrew(fSort, pairsCrew, out Pi, out c, mg1, f1, mg2, f2);
 
 				bool[] pairCrewFlags = MipSolverCrew(Pi, c);
+				if (pairCrewFlags == null)
+				{
+					return 2;
+				}
 				for (int i = 0; i < pairsCrew.Count; i++)
 				{
 					if (pairCrewFlags[i])
@@ -351,7 +345,8 @@ namespace AirlineSheldure
 
 					if (pairsCrewBase.Count > 0)
 					{
-						throw new Exception("Невозможно покрыть связку!");
+						return 3;
+						//throw new Exception("Невозможно покрыть связку!");
 					}
 				}
 
@@ -387,12 +382,13 @@ namespace AirlineSheldure
 
 					if (pairsCrewBase.Count > 0)
 					{
-						throw new Exception("Невозможно покрыть связку!");
+						return 3;
+						//throw new Exception("Невозможно покрыть связку!");
 					}
 				}
 			}
 
-
+			return 0;
 			//db.SaveChanges();
 		}
 
@@ -447,7 +443,10 @@ namespace AirlineSheldure
 					};
 					a.Description += isFirstPilot ? "Первый пилот." : "Второй пилот";
 
-					crewmember.Roster.Actions.Add(a);
+					App.Current.Dispatcher.Invoke((System.Action)delegate // <--- HERE
+					{
+						crewmember.Roster.Actions.Add(a);
+					});
 					db.Actions.Add(a);
 					if (j < pair.CrewmemberDuties[i].Flights.Count - 1)
 					{
@@ -459,7 +458,11 @@ namespace AirlineSheldure
 							Description = "Ожидание нового полета"
 						};
 
-						crewmember.Roster.Actions.Add(a);
+						App.Current.Dispatcher.Invoke((System.Action)delegate // <--- HERE
+						{
+							crewmember.Roster.Actions.Add(a);
+						});
+						//crewmember.Roster.Actions.Add(a);
 						db.Actions.Add(a);
 					}
 				}
@@ -474,7 +477,10 @@ namespace AirlineSheldure
 						Description = "Отдых в гостинице."
 					};
 
-					crewmember.Roster.Actions.Add(a);
+					App.Current.Dispatcher.Invoke((System.Action)delegate // <--- HERE
+					{
+						crewmember.Roster.Actions.Add(a);
+					});
 					db.Actions.Add(a);
 				}
 			}
@@ -972,6 +978,29 @@ namespace AirlineSheldure
 
 		private void MainWindow_OnLoaded(object sender, RoutedEventArgs e)
 		{
+			try
+			{
+				if (File.Exists("auth.txt"))
+				{
+					string[] s = File.ReadAllLines("auth.txt").Where(s => s.Length != 0).ToArray();
+					string host = s[0];
+					string port = s[1];
+					string user = s[2];
+					string password = Decrypt(s[3], _pkey);
+					_db = new ApplicationContext(host, port, user, password);
+				}
+				else
+				{
+					throw new Exception();
+				}
+			}
+			catch (Exception ee)
+			{
+				MessageBox.Show("Ошибка подключения к базе данных. Проверьте доступность базы данных и правильность введенных данных!","Ошибка.");
+				Process.Start(System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName);
+				Environment.Exit(-1);
+			}
+
 			CollectionViewSource flightViewSource =
 				((CollectionViewSource)(this.FindResource("FlightViewSource")));
 			CollectionViewSource airplaneViewSource =
@@ -998,19 +1027,13 @@ namespace AirlineSheldure
 			_db.Flights.Load();
 			_db.Airports.Load();
 			_db.TurnTimes.Load();
+			_db.Actions.Load();
 			_db.Crewmembers.Include(i => i.Permissions).Include(c => c.Roster).ThenInclude(r => r.Actions).Load();
 			//_db.Rosters.Load();
-			//_db.Actions.Load();
+			
 			_db.ActionTypes.Load();
 			_db.AirplanePairs.Load();
-			foreach (var crewmember in _db.Crewmembers)
-			{
-				// crewmember.Roster.Actions.Add(new Model.Action()
-				// {
-				//     ActionTypeId = (int) ActionEnum.Holiday, StartTime = DateTime.Now, EndTime = DateTime.Now.AddDays(1),
-				//     Description = "лулзич"
-				// });
-			}
+
 			// After the data is loaded call the DbSet<T>.Local property
 			// to use the DbSet<T> as a binding source.
 
@@ -1019,6 +1042,28 @@ namespace AirlineSheldure
 			airoportViewSource.Source = _db.Airports.Local.ToObservableCollection();
 			crewmemberViewSource.Source = _db.Crewmembers.Local.ToObservableCollection();
 			actionTypesViewSource.Source = _db.ActionTypes.Local.ToObservableCollection();
+		}
+		public static string Decrypt(string cipherText, string privateKey)
+		{
+			string EncryptionKey = privateKey;
+			cipherText = cipherText.Replace(" ", "+");
+			byte[] cipherBytes = Convert.FromBase64String(cipherText);
+			using (Aes encryptor = Aes.Create())
+			{
+				Rfc2898DeriveBytes pdb = new Rfc2898DeriveBytes(EncryptionKey, new byte[] { 0x49, 0x76, 0x61, 0x6e, 0x20, 0x4d, 0x65, 0x64, 0x76, 0x65, 0x64, 0x65, 0x76 });
+				encryptor.Key = pdb.GetBytes(32);
+				encryptor.IV = pdb.GetBytes(16);
+				using (MemoryStream ms = new MemoryStream())
+				{
+					using (CryptoStream cs = new CryptoStream(ms, encryptor.CreateDecryptor(), CryptoStreamMode.Write))
+					{
+						cs.Write(cipherBytes, 0, cipherBytes.Length);
+						cs.Close();
+					}
+					cipherText = Encoding.Unicode.GetString(ms.ToArray());
+				}
+			}
+			return cipherText;
 		}
 
 		private void ButtonFlightDelete_Click(object sender, RoutedEventArgs e)
@@ -1663,11 +1708,32 @@ namespace AirlineSheldure
 
 		private void ButtonAirplaneSheldure_Click(object sender, RoutedEventArgs e)
 		{
-
+			//TextBlockBusy.Text = "Расстановка парка ВС по рейсам";
+			MainBusy.DataContext = "Расстановка парка ВС по рейсам";
+			if (_db.Flights.Count() == 0)
+			{
+				MessageBox.Show("Список рейсов пуст!", "Ошибка");
+				return;
+			}
+			bool isValid = _db.Flights.AsEnumerable().All(f => f.IsValid);
+			if (!isValid)
+			{
+				MessageBox.Show("Перед выполнением алгоритма исправьте ошибки в задании цепочек рейсов. Дата отправления должна быть раньше даты прибытия, а аэропор прибития не может быть равен аэропорту отправления.", "Ошибка");
+				return;
+			}
+			try
+			{
+				_db.SaveChanges();
+			}
+			catch(DbUpdateException ee)
+			{
+				MessageBox.Show("Невозможно запустить алгоритм, проверьте не повторяются ли значения номеров рейсов.","Ошибка");
+				return;
+			}
 			_backgroundWorker = new Thread(() =>
 			{
 				Dispatcher.BeginInvoke((System.Action)(() => MainBusy.IsBusy = true));
-				
+				var start = DateTime.Now;
 				_db.AirplanePairs.RemoveRange(_db.AirplanePairs);
 				foreach (var flight in _db.Flights)
 				{
@@ -1677,7 +1743,7 @@ namespace AirlineSheldure
 				int res;
 				try
 				{
-					res = AirlineRostering();
+					res = AirlineRostering(1);
 				}
 				catch(Exception ee)
 				{
@@ -1687,15 +1753,110 @@ namespace AirlineSheldure
 				if (res == 1)
 				{
 					MessageBox.Show("Ошибка. Слишком большое количество цепочек рейсов. Попробуйте разбить список рейсов на меньшие списки.","Ошибка");
+					Dispatcher.BeginInvoke((System.Action)(() => MainBusy.IsBusy = false));
 					return;
 				}
 				if (res == 2)
 				{
 					MessageBox.Show("Ошибка. Невозможно найти действительное решение задачи расстановки парка ВС по рейсам. Попробуйте изменить список рейсов и/или данные о типах ВС.", "Ошибка");
+					Dispatcher.BeginInvoke((System.Action)(() => MainBusy.IsBusy = false));
 					return;
 				}
 				_db.SaveChanges();
+				var elapse = DateTime.Now- start ;
+				Dispatcher.BeginInvoke((System.Action)(() => TextblockAirplaneSheldure.Text = elapse.ToString(@"hh\:mm\:ss")));
 				Dispatcher.BeginInvoke((System.Action)(() => MainBusy.IsBusy = false));
+				Dispatcher.BeginInvoke((System.Action)(() => popup1.IsOpen = true));
+				//MessageBox.Show("Успешно");
+			});
+			_backgroundWorker.Start();
+			//t.Join();
+			//MainBusy.IsBusy = false;
+		}
+		private void ButtonCrewRostering_Click(object sender, RoutedEventArgs e)
+		{
+			MainBusy.DataContext = "Планирование расписания членов экипажей";
+			if (_db.Flights.Count() == 0)
+			{
+				MessageBox.Show("Список рейсов пуст!", "Ошибка");
+				return;
+			}
+			if (_db.Crewmembers.Count() == 0)
+			{
+				MessageBox.Show("Список членов экипажей пуст!", "Ошибка");
+				return;
+			}
+			bool isValid = _db.Flights.AsEnumerable().All(f => f.IsValid);
+			if (!isValid)
+			{
+				MessageBox.Show("Перед выполнением алгоритма исправьте ошибки в задании цепочек рейсов. Дата отправления должна быть раньше даты прибытия, а аэропор прибития не может быть равен аэропорту отправления.", "Ошибка");
+				return;
+			}
+			isValid = _db.Flights.AsEnumerable().All(f => f.Airplane != null);
+			if (!isValid)
+			{
+				MessageBox.Show("Не для всех рейсов назначен ВС. Сначала выполните предыдущий шаг - расстановка ВС по рейсам.", "Ошибка");
+				return;
+			}
+			try
+			{
+				_db.SaveChanges();
+			}
+			catch (DbUpdateException ee)
+			{
+				MessageBox.Show("Невозможно запустить алгоритм, проверьте не повторяются ли значения номеров рейсов.", "Ошибка");
+				return;
+			}
+			int dayBuf = (int)IntegerUpDownCrew.Value;
+			foreach (var roster in _db.Crewmembers.Select(c=>c.Roster))
+			{
+				roster.FlyTime = TimeSpan.Zero;
+				roster.ElapseTime = TimeSpan.Zero;
+			}
+			_db.CrewmemberPairs.RemoveRange(_db.CrewmemberPairs);
+			_db.CrewmemberDuties.RemoveRange(_db.CrewmemberDuties);
+			_db.Actions.RemoveRange(_db.Actions.Where(a => a.ActionTypeId == -1 || a.ActionTypeId == -2 || a.ActionTypeId == -5 || a.ActionTypeId == -4));
+			_db.SaveChanges();
+			_backgroundWorker = new Thread(() =>
+			{
+				Dispatcher.BeginInvoke((System.Action)(() => MainBusy.IsBusy = true));
+				var start = DateTime.Now;
+				
+				int res;
+				try
+				{
+					res = CrewRostering(dayBuf);
+				}
+				catch (Exception ee)
+				{
+					MessageBox.Show("Непредвиденная ошибка.", "Ошибка");
+					Dispatcher.BeginInvoke((System.Action)(() => MainBusy.IsBusy = false));
+					return;
+				}
+				if (res == 1)
+				{
+					MessageBox.Show("Ошибка. Слишком большое количество цепочек рейсов. Попробуйте разбить список рейсов на меньшие списки.", "Ошибка");
+					Dispatcher.BeginInvoke((System.Action)(() => MainBusy.IsBusy = false));
+					return;
+				}
+				if (res == 2)
+				{
+					MessageBox.Show("Ошибка. Невозможно найти действительное решение задачи построения расписания. Попробуйте изменить список рейсов.", "Ошибка");
+					Dispatcher.BeginInvoke((System.Action)(() => MainBusy.IsBusy = false));
+					return;
+				}
+				if (res == 3)
+				{
+					MessageBox.Show("Оптимальное расписание построено, но не хватает пилотов, обладающих необходимыми допусками для покрытия всех рейсов. Попробуйте добавить членов экипажей.", "Ошибка");
+					Dispatcher.BeginInvoke((System.Action)(() => MainBusy.IsBusy = false));
+					return;
+				}
+				_db.SaveChanges();
+				var elapse = DateTime.Now - start;
+				Dispatcher.BeginInvoke((System.Action)(() => TextblockCrewRostering.Text = elapse.ToString(@"hh\:mm\:ss")));
+				Dispatcher.BeginInvoke((System.Action)(() => MainBusy.IsBusy = false));
+				
+				//MessageBox.Show("Успешно");
 			});
 			_backgroundWorker.Start();
 			//t.Join();
@@ -1706,8 +1867,9 @@ namespace AirlineSheldure
 			if(_backgroundWorker!=null && _backgroundWorker.IsAlive)
 			{
 				TerminateThread(_backgroundWorker.ManagedThreadId);
-				MainBusy.IsBusy = false;
+				
 			}
+			MainBusy.IsBusy = false;
 		}
 		[DllImport("Kernel32.dll", CharSet = CharSet.Auto)]
 		public static extern int TerminateThread(int hThread);
